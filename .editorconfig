@@ -1,0 +1,2 @@
+csharp_style_prefer_primary_constructors = true
+csharp_prefer_static_local_functions = true
