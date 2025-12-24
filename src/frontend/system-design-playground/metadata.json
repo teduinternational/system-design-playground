@@ -1,0 +1,5 @@
+{
+  "name": "SystemPlay Architecture Designer",
+  "description": "A high-fidelity system design tool featuring a dark-themed UI, component library, and property configuration panel using React and Tailwind CSS.",
+  "requestFramePermissions": []
+}
