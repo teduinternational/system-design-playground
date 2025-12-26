@@ -1,13 +1,22 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Clock, MoreVertical, Folder } from 'lucide-react';
+import sampleDiagram from '../mock-data/sample-diagram.json';
 
-const PROJECTS = [
-  { id: 1, name: 'E-Commerce Architecture', updated: '2 mins ago', version: 'v2.4', nodes: 24 },
-  { id: 2, name: 'Payment Gateway Flow', updated: '2 days ago', version: 'v1.0', nodes: 12 },
-  { id: 3, name: 'User Authentication Svc', updated: '5 days ago', version: 'v1.2', nodes: 8 },
-  { id: 4, name: 'Analytics Pipeline', updated: '1 week ago', version: 'v0.9', nodes: 35 },
-];
+// Generate project from sample diagram metadata
+const PROJECT = {
+  id: sampleDiagram.metadata.id,
+  name: sampleDiagram.metadata.name,
+  updated: new Date(sampleDiagram.metadata.updatedAt).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  }),
+  version: `v${sampleDiagram.metadata.version}.0`,
+  nodes: sampleDiagram.nodes.length,
+  description: sampleDiagram.metadata.description,
+  tags: sampleDiagram.metadata.tags
+};
 
 export const ProjectListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -30,35 +39,44 @@ export const ProjectListPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {PROJECTS.map((project) => (
-            <div 
-              key={project.id}
-              onClick={() => navigate('/editor')}
-              className="group bg-surface border border-border hover:border-primary/50 rounded-xl p-4 cursor-pointer transition-all hover:bg-surface-hover"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="p-2 bg-primary/10 rounded-lg text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                  <Folder className="w-5 h-5" />
-                </div>
-                <button className="text-secondary hover:text-white p-1 rounded hover:bg-white/5">
-                  <MoreVertical className="w-4 h-4" />
-                </button>
+          {/* Sample Project from Mock Data */}
+          <div 
+            onClick={() => navigate('/editor')}
+            className="group bg-surface border border-border hover:border-primary/50 rounded-xl p-4 cursor-pointer transition-all hover:bg-surface-hover"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="p-2 bg-primary/10 rounded-lg text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                <Folder className="w-5 h-5" />
               </div>
-              
-              <h3 className="font-semibold text-white mb-1 group-hover:text-primary transition-colors">{project.name}</h3>
-              
-              <div className="flex items-center gap-4 text-xs text-secondary mt-4">
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {project.updated}
-                </span>
-                <span className="bg-background px-2 py-0.5 rounded border border-border">
-                  {project.version}
-                </span>
-                <span>{project.nodes} nodes</span>
-              </div>
+              <button className="text-secondary hover:text-white p-1 rounded hover:bg-white/5">
+                <MoreVertical className="w-4 h-4" />
+              </button>
             </div>
-          ))}
+            
+            <h3 className="font-semibold text-white mb-1 group-hover:text-primary transition-colors">{PROJECT.name}</h3>
+            <p className="text-xs text-secondary mb-3 line-clamp-2">{PROJECT.description}</p>
+            
+            <div className="flex items-center gap-4 text-xs text-secondary mt-4">
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {PROJECT.updated}
+              </span>
+              <span className="bg-background px-2 py-0.5 rounded border border-border">
+                {PROJECT.version}
+              </span>
+              <span>{PROJECT.nodes} nodes</span>
+            </div>
+            
+            {PROJECT.tags && PROJECT.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-3">
+                {PROJECT.tags.slice(0, 3).map((tag) => (
+                  <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
           
           {/* Create New Placeholder */}
           <button 

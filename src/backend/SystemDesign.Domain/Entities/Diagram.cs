@@ -1,7 +1,7 @@
 namespace SystemDesign.Domain.Entities;
 
 /// <summary>
-/// Entity đại diện cho một diagram trong hệ thống
+/// Entity đại diện cho một diagram (project) trong hệ thống
 /// </summary>
 public sealed class Diagram : BaseEntity
 {
@@ -9,17 +9,17 @@ public sealed class Diagram : BaseEntity
     public string? Description { get; set; }
     
     /// <summary>
-    /// Lưu trữ dữ liệu diagram dưới dạng JSON (React Flow nodes, edges)
+    /// User ID của người tạo hoặc owner
     /// </summary>
-    public required string JsonData { get; set; }
-    
-    /// <summary>
-    /// Version của diagram để theo dõi thay đổi
-    /// </summary>
-    public int Version { get; set; } = 1;
+    public Guid? UserId { get; set; }
     
     /// <summary>
     /// Người tạo hoặc owner của diagram
     /// </summary>
     public string? CreatedBy { get; set; }
+    
+    /// <summary>
+    /// Quan hệ: 1 Diagram có nhiều Scenarios (versions)
+    /// </summary>
+    public ICollection<Scenario> Scenarios { get; set; } = new List<Scenario>();
 }

@@ -1,0 +1,333 @@
+{
+  "metadata": {
+    "id": "diagram_001",
+    "name": "E-Commerce System Architecture",
+    "description": "Microservices architecture for scalable e-commerce platform",
+    "createdAt": "2025-12-24T10:00:00Z",
+    "updatedAt": "2025-12-26T14:30:00Z",
+    "version": 2,
+    "createdBy": "System Architect",
+    "tags": ["microservices", "e-commerce", "scalable"]
+  },
+  "nodes": [
+    {
+      "id": "node_lb_01",
+      "type": "custom",
+      "position": { "x": 550, "y": 50 },
+      "data": {
+        "category": "Traffic Manager",
+        "technologies": ["NGINX", "Kong Gateway"],
+        "props": {
+          "instanceCount": 3,
+          "isClustered": true,
+          "region": "us-east-1",
+          "algorithm": "Round Robin",
+          "healthCheckInterval": "10s",
+          "connectionTimeout": "30s",
+          "maxConnections": 10000
+        },
+        "simulation": {
+          "processingTimeMs": 5,
+          "failureRate": 0.001,
+          "queueSize": 10000,
+          "currentLoad": 0.65
+        },
+        "iconName": "Network",
+        "status": "healthy"
+      }
+    },
+    {
+      "id": "node_api_gateway",
+      "type": "custom",
+      "position": { "x": 550, "y": 230 },
+      "data": {
+        "category": "Traffic Manager",
+        "technologies": ["API Gateway", "AWS API Gateway"],
+        "props": {
+          "instanceCount": 2,
+          "region": "us-east-1",
+          "rateLimit": "10000 req/min",
+          "cachingEnabled": true,
+          "cacheTTL": "300s",
+          "throttling": "Enabled"
+        },
+        "simulation": {
+          "processingTimeMs": 10,
+          "failureRate": 0.002,
+          "currentLoad": 0.55
+        },
+        "iconName": "Zap",
+        "status": "healthy"
+      }
+    },
+    {
+      "id": "node_auth_service",
+      "type": "custom",
+      "position": { "x": 200, "y": 420 },
+      "data": {
+        "category": "Compute",
+        "technologies": ["WebApi", "Microservice"],
+        "props": {
+          "instanceCount": 4,
+          "isClustered": true,
+          "region": "us-east-1",
+          "runtime": "Node.js",
+          "framework": "Express",
+          "cpu": "2 vCPU",
+          "memory": "4 GB",
+          "sessionTimeout": "3600s",
+          "tokenExpiry": "1h"
+        },
+        "simulation": {
+          "processingTimeMs": 50,
+          "failureRate": 0.01,
+          "currentLoad": 0.42
+        },
+        "iconName": "Shield",
+        "status": "healthy"
+      }
+    },
+    {
+      "id": "node_product_service",
+      "type": "custom",
+      "position": { "x": 550, "y": 420 },
+      "data": {
+        "category": "Compute",
+        "technologies": ["Microservice", "ContainerService"],
+        "props": {
+          "instanceCount": 6,
+          "isClustered": true,
+          "region": "us-east-1",
+          "runtime": "Go",
+          "protocol": "gRPC",
+          "cpu": "4 vCPU",
+          "memory": "8 GB",
+          "autoscaling": "Enabled",
+          "minInstances": 3,
+          "maxInstances": 12
+        },
+        "simulation": {
+          "processingTimeMs": 30,
+          "failureRate": 0.005,
+          "currentLoad": 0.78
+        },
+        "iconName": "Package",
+        "status": "healthy"
+      }
+    },
+    {
+      "id": "node_order_service",
+      "type": "custom",
+      "position": { "x": 900, "y": 420 },
+      "data": {
+        "category": "Compute",
+        "technologies": ["Microservice", "WebApi"],
+        "props": {
+          "instanceCount": 5,
+          "isClustered": true,
+          "region": "us-east-1",
+          "runtime": "Java",
+          "framework": "Spring Boot",
+          "cpu": "4 vCPU",
+          "memory": "8 GB",
+          "jvmHeap": "6 GB",
+          "gcAlgorithm": "G1GC"
+        },
+        "simulation": {
+          "processingTimeMs": 45,
+          "failureRate": 0.008,
+          "currentLoad": 0.68
+        },
+        "iconName": "ShoppingCart",
+        "status": "healthy"
+      }
+    },
+    {
+      "id": "node_redis_cache",
+      "type": "custom",
+      "position": { "x": 200, "y": 620 },
+      "data": {
+        "category": "Middleware",
+        "technologies": ["Redis", "Redis Cluster"],
+        "props": {
+          "instanceCount": 3,
+          "isClustered": true,
+          "region": "us-east-1",
+          "memory": "16 GB",
+          "evictionPolicy": "allkeys-lru",
+          "maxConnections": 10000,
+          "persistenceEnabled": true
+        },
+        "simulation": {
+          "processingTimeMs": 2,
+          "failureRate": 0.0001,
+          "currentLoad": 0.35
+        },
+        "iconName": "Database",
+        "status": "healthy"
+      }
+    },
+    {
+      "id": "node_postgres_db",
+      "type": "custom",
+      "position": { "x": 550, "y": 620 },
+      "data": {
+        "category": "Storage",
+        "technologies": ["PostgreSQL 15", "RDS"],
+        "props": {
+          "instanceCount": 2,
+          "isClustered": true,
+          "backupPolicy": "Daily",
+          "region": "us-east-1",
+          "storageType": "SSD",
+          "storageSize": "500 GB",
+          "iops": 10000,
+          "maxConnections": 500,
+          "replicationType": "Async",
+          "readReplicas": 2
+        },
+        "simulation": {
+          "processingTimeMs": 20,
+          "failureRate": 0.002,
+          "currentLoad": 0.58
+        },
+        "iconName": "Database",
+        "status": "healthy"
+      }
+    },
+    {
+      "id": "node_kafka",
+      "type": "custom",
+      "position": { "x": 900, "y": 620 },
+      "data": {
+        "category": "Middleware",
+        "technologies": ["Apache Kafka", "MSK"],
+        "props": {
+          "instanceCount": 3,
+          "isClustered": true,
+          "region": "us-east-1",
+          "throughput": "100 MB/s",
+          "retentionPeriod": "7 days",
+          "partitions": 12,
+          "replicationFactor": 3,
+          "compressionType": "snappy"
+        },
+        "simulation": {
+          "processingTimeMs": 8,
+          "failureRate": 0.001,
+          "queueSize": 50000,
+          "currentLoad": 0.45
+        },
+        "iconName": "Workflow",
+        "status": "healthy"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_lb_to_gateway",
+      "source": "node_lb_01",
+      "target": "node_api_gateway",
+      "label": "HTTPS",
+      "data": {
+        "protocol": "https",
+        "auth": "TLS",
+        "trafficWeight": 1.0,
+        "networkLatency": 2
+      }
+    },
+    {
+      "id": "edge_gateway_to_auth",
+      "source": "node_api_gateway",
+      "target": "node_auth_service",
+      "label": "REST/JWT",
+      "data": {
+        "protocol": "https",
+        "auth": "JWT",
+        "trafficWeight": 0.3,
+        "networkLatency": 5
+      }
+    },
+    {
+      "id": "edge_gateway_to_product",
+      "source": "node_api_gateway",
+      "target": "node_product_service",
+      "label": "gRPC",
+      "data": {
+        "protocol": "grpc",
+        "auth": "mTLS",
+        "trafficWeight": 0.5,
+        "networkLatency": 3
+      }
+    },
+    {
+      "id": "edge_gateway_to_order",
+      "source": "node_api_gateway",
+      "target": "node_order_service",
+      "label": "REST",
+      "data": {
+        "protocol": "https",
+        "auth": "JWT",
+        "trafficWeight": 0.4,
+        "networkLatency": 4
+      }
+    },
+    {
+      "id": "edge_auth_to_redis",
+      "source": "node_auth_service",
+      "target": "node_redis_cache",
+      "label": "Redis Protocol",
+      "data": {
+        "protocol": "redis",
+        "trafficWeight": 1.0,
+        "networkLatency": 1
+      }
+    },
+    {
+      "id": "edge_product_to_db",
+      "source": "node_product_service",
+      "target": "node_postgres_db",
+      "label": "SQL",
+      "data": {
+        "protocol": "tcp",
+        "auth": "Password",
+        "trafficWeight": 1.0,
+        "networkLatency": 3
+      }
+    },
+    {
+      "id": "edge_product_to_redis",
+      "source": "node_product_service",
+      "target": "node_redis_cache",
+      "label": "Cache",
+      "data": {
+        "protocol": "redis",
+        "trafficWeight": 0.8,
+        "networkLatency": 1
+      }
+    },
+    {
+      "id": "edge_order_to_db",
+      "source": "node_order_service",
+      "target": "node_postgres_db",
+      "label": "SQL",
+      "data": {
+        "protocol": "tcp",
+        "auth": "Password",
+        "trafficWeight": 1.0,
+        "networkLatency": 3
+      }
+    },
+    {
+      "id": "edge_order_to_kafka",
+      "source": "node_order_service",
+      "target": "node_kafka",
+      "label": "Events",
+      "data": {
+        "protocol": "kafka",
+        "trafficWeight": 1.0,
+        "networkLatency": 2
+      }
+    }
+  ]
+}

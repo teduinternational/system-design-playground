@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { 
   Server, 
   Cpu, 
@@ -8,13 +8,37 @@ import {
   MoreHorizontal,
   ChevronDown
 } from 'lucide-react';
-import { Node } from '../types';
+import { useDiagramStore } from '../stores/useDiagramStore';
 
-interface PropertiesPanelProps {
-  selectedNode: Node | null;
-}
+export const PropertiesPanel: React.FC = () => {
+  // Only subscribe to the ID to prevent re-renders
+  const selectedNodeId = useDiagramStore((state) => state.selectedNode?.id);
+  const nodes = useDiagramStore((state) => state.nodes);
+  
+  const updateNodeSimulation = useDiagramStore((state) => state.updateNodeSimulation);
+  const updateNodeSpecs = useDiagramStore((state) => state.updateNodeSpecs);
 
-export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedNode }) => {
+  // Memoize the selected node lookup
+  const selectedNode = useMemo(() => {
+    return selectedNodeId ? nodes.find(n => n.id === selectedNodeId) || null : null;
+  }, [selectedNodeId, nodes]);
+
+  const handleSimulationChange = (field: string, value: number) => {
+    if (!selectedNode) return;
+    
+    updateNodeSimulation(selectedNode.id, {
+      [field]: value,
+    } as any);
+  };
+
+  const handlePropsChange = (field: string, value: any) => {
+    if (!selectedNode) return;
+    
+    updateNodeSpecs(selectedNode.id, {
+      [field]: value,
+    });
+  };
+
   if (!selectedNode) {
     return (
       <aside className="w-80 bg-surface border-l border-border flex flex-col shrink-0 z-10 h-full items-center justify-center text-secondary">
@@ -22,6 +46,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedNode }
       </aside>
     );
   }
+
+  const simulation = selectedNode.data.simulation || { processingTimeMs: 0, failureRate: 0 };
+  const category = selectedNode.data.category || 'Unknown';
+  const technologies = selectedNode.data.technologies?.join(', ') || 'N/A';
+  const props = selectedNode.data.props || {};
 
   return (
     <aside className="w-80 bg-surface border-l border-border flex flex-col shrink-0 z-10 h-full overflow-hidden">
@@ -40,118 +69,155 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedNode }
             <Server className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-white">{selectedNode.data.label}</h3>
-            <p className="text-xs text-secondary">{selectedNode.data.subLabel || 'General Purpose Compute'}</p>
+            <h3 className="text-base font-semibold text-white">{category}</h3>
+            <p className="text-xs text-secondary">{technologies}</p>
           </div>
         </div>
 
         <hr className="border-border" />
 
-        {/* Compute Resources Group */}
+        {/* Technical Properties */}
+        {Object.keys(props).length > 0 && (
+          <>
+            <div className="space-y-3">
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-secondary flex items-center gap-2">
+                <Cpu className="w-3.5 h-3.5" />
+                Technical Configuration
+              </h4>
+              
+              {/* Render all properties as editable fields */}
+              {Object.entries(props).map(([key, value]) => {
+                // Format the key to display name
+                const displayName = key
+                  .replace(/([A-Z])/g, ' $1')
+                  .replace(/^./, (str) => str.toUpperCase())
+                  .trim();
+                
+                // Determine input type based on value type
+                if (typeof value === 'boolean') {
+                  return (
+                    <div key={key} className="space-y-1.5">
+                      <label className="text-xs font-medium text-gray-400">{displayName}</label>
+                      <select
+                        className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                        value={value ? 'true' : 'false'}
+                        onChange={(e) => handlePropsChange(key, e.target.value === 'true')}
+                      >
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                      </select>
+                    </div>
+                  );
+                } else if (typeof value === 'number') {
+                  return (
+                    <div key={key} className="space-y-1.5">
+                      <label className="text-xs font-medium text-gray-400">{displayName}</label>
+                      <input
+                        className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono"
+                        type="number"
+                        value={value}
+                        onChange={(e) => handlePropsChange(key, parseFloat(e.target.value) || 0)}
+                      />
+                    </div>
+                  );
+                } else {
+                  // String values
+                  return (
+                    <div key={key} className="space-y-1.5">
+                      <label className="text-xs font-medium text-gray-400">{displayName}</label>
+                      <input
+                        className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono"
+                        type="text"
+                        value={String(value)}
+                        onChange={(e) => handlePropsChange(key, e.target.value)}
+                      />
+                    </div>
+                  );
+                }
+              })}
+            </div>
+            
+            <hr className="border-border" />
+          </>
+        )}
+            
+            {simulation.currentLoad !== undefined && (
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-gray-400">Current Load</label>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-400">{(simulation.currentLoad * 100).toFixed(0)}%</span>
+                  </div>
+                  <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all ${
+                        simulation.currentLoad > 0.8 ? 'bg-red-500' : 'bg-green-500'
+                      }`} 
+                      style={{ width: `${simulation.currentLoad * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+        {/* Simulation Parameters */}
         <div className="space-y-5">
           <div className="space-y-3">
             <h4 className="text-[10px] font-bold uppercase tracking-wider text-secondary flex items-center gap-2">
-              <Cpu className="w-3.5 h-3.5" />
-              Compute Resources
+              <TrendingUp className="w-3.5 h-3.5" />
+              Simulation Parameters
             </h4>
             
             <div className="space-y-2">
-              <label className="text-xs font-medium text-gray-400">Instance Type</label>
-              <div className="relative">
-                <select className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary appearance-none">
-                  <option>General Purpose (Standard)</option>
-                  <option>Compute Optimized</option>
-                  <option>Memory Optimized</option>
-                  <option>GPU Accelerated</option>
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-secondary w-4 h-4" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-400">vCPU</label>
-                <div className="flex items-center gap-2 bg-background border border-border rounded-md px-2 py-1.5">
-                  <input className="w-full bg-transparent border-none p-0 text-sm text-white font-mono focus:ring-0 outline-none" type="number" defaultValue="4" />
-                  <span className="text-xs text-secondary">core</span>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-400">Memory</label>
-                <div className="flex items-center gap-2 bg-background border border-border rounded-md px-2 py-1.5">
-                  <input className="w-full bg-transparent border-none p-0 text-sm text-white font-mono focus:ring-0 outline-none" type="number" defaultValue="16" />
-                  <span className="text-xs text-secondary">GB</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Storage Group */}
-          <div className="space-y-3">
-            <h4 className="text-[10px] font-bold uppercase tracking-wider text-secondary flex items-center gap-2">
-              <HardDrive className="w-3.5 h-3.5" />
-              Storage & IO
-            </h4>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-400">Disk Size</label>
-                <div className="flex items-center gap-2 bg-background border border-border rounded-md px-2 py-1.5">
-                  <input className="w-full bg-transparent border-none p-0 text-sm text-white font-mono focus:ring-0 outline-none" type="number" defaultValue="250" />
-                  <span className="text-xs text-secondary">GB</span>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-400">IOPS (Max)</label>
-                <div className="flex items-center gap-2 bg-background border border-border rounded-md px-2 py-1.5">
-                  <input className="w-full bg-transparent border-none p-0 text-sm text-white font-mono focus:ring-0 outline-none" type="number" defaultValue="5000" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Networking Group */}
-          <div className="space-y-3">
-            <h4 className="text-[10px] font-bold uppercase tracking-wider text-secondary flex items-center gap-2">
-              <Network className="w-3.5 h-3.5" />
-              Networking
-            </h4>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-gray-400">Security Group Rules</label>
-              <textarea 
-                className="w-full bg-background border border-border rounded-md px-3 py-2 text-xs text-secondary font-mono focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary h-20 resize-none leading-relaxed"
-                defaultValue={`Inbound: TCP 80, 443\nOutbound: All Traffic\nInternal: TCP 5432 (DB)`}
+              <label className="text-xs font-medium text-gray-400">Processing Time (ms)</label>
+              <input 
+                className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" 
+                type="number" 
+                value={simulation.processingTimeMs}
+                onChange={(e) => handleSimulationChange('processingTimeMs', parseFloat(e.target.value))}
               />
             </div>
-          </div>
 
-          {/* Scaling Group */}
-          <div className="space-y-3">
-            <h4 className="text-[10px] font-bold uppercase tracking-wider text-secondary flex items-center gap-2">
-              <TrendingUp className="w-3.5 h-3.5" />
-              Scaling Policy
-            </h4>
             <div className="space-y-2">
-              <div className="relative">
-                <select className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary appearance-none">
-                  <option>Auto-scale (CPU &gt; 70%)</option>
-                  <option>Manual Provisioning</option>
-                  <option>Predictive Scaling</option>
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-secondary w-4 h-4" />
-              </div>
+              <label className="text-xs font-medium text-gray-400">Failure Rate (0.0 - 1.0)</label>
+              <input 
+                className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" 
+                type="number" 
+                step="0.001"
+                min="0"
+                max="1"
+                value={simulation.failureRate}
+                onChange={(e) => handleSimulationChange('failureRate', parseFloat(e.target.value))}
+              />
             </div>
+
+            {simulation.queueSize !== undefined && (
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-gray-400">Queue Size</label>
+                <input 
+                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" 
+                  type="number" 
+                  value={simulation.queueSize}
+                  onChange={(e) => handleSimulationChange('queueSize', parseInt(e.target.value))}
+                />
+              </div>
+            )}
           </div>
         </div>
 
         <hr className="border-border" />
 
-        {/* Maintenance Toggle */}
-        <div className="bg-background/50 rounded-lg p-3 border border-border space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-300">Maintenance Mode</span>
-            <button className="w-9 h-5 bg-border rounded-full relative transition-colors duration-200">
-              <span className="absolute left-0.5 top-0.5 w-4 h-4 bg-gray-400 rounded-full transition-transform duration-200"></span>
-            </button>
+        {/* Node Status */}
+        <div className="space-y-2">
+          <h4 className="text-[10px] font-bold uppercase tracking-wider text-secondary">Status</h4>
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${
+              selectedNode.data.status === 'healthy' ? 'bg-green-500' :
+              selectedNode.data.status === 'warning' ? 'bg-yellow-500' :
+              selectedNode.data.status === 'error' ? 'bg-red-500' :
+              'bg-gray-500'
+            }`}></div>
+            <span className="text-sm capitalize">{selectedNode.data.status || 'idle'}</span>
           </div>
         </div>
       </div>
