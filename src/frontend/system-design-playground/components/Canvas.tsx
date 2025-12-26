@@ -68,6 +68,66 @@ const CanvasInner: React.FC<CanvasProps> = ({
     return mapping[nodeType.toLowerCase()] || NodeCategory.COMPUTE;
   };
 
+  // Validation function for connections
+  const isValidConnection = useCallback(
+    (connection: Connection) => {
+      const { source, target } = connection;
+
+      // Rule 1: Cannot connect to itself
+      if (source === target) {
+        return false;
+      }
+
+      // Find source and target nodes
+      const sourceNode = nodes.find(n => n.id === source);
+      const targetNode = nodes.find(n => n.id === target);
+
+      if (!sourceNode || !targetNode) {
+        return false;
+      }
+
+      const sourceCategory = sourceNode.data?.category as string;
+      const targetCategory = targetNode.data?.category as string;
+
+      // Rule 2: No backward connections (Storage/Middleware cannot connect to Traffic Manager/Entry Point)
+      const isBackward = 
+        (sourceCategory === NodeCategory.STORAGE || sourceCategory === NodeCategory.MIDDLEWARE) &&
+        (targetCategory === NodeCategory.TRAFFIC_MANAGER || targetCategory === NodeCategory.ENTRY_POINT);
+
+      if (isBackward) {
+        return false;
+      }
+
+      // Rule 3: Client/Entry Point nodes should only connect to Traffic Manager or Compute
+      if (sourceCategory === NodeCategory.ENTRY_POINT) {
+        const validTargets = [NodeCategory.TRAFFIC_MANAGER, NodeCategory.COMPUTE];
+        if (!validTargets.includes(targetCategory as NodeCategory)) {
+          return false;
+        }
+      }
+
+      // Rule 4: Traffic Manager should connect to Compute or other Traffic Managers
+      if (sourceCategory === NodeCategory.TRAFFIC_MANAGER) {
+        const validTargets = [NodeCategory.COMPUTE, NodeCategory.TRAFFIC_MANAGER];
+        if (!validTargets.includes(targetCategory as NodeCategory)) {
+          return false;
+        }
+      }
+
+      // Rule 5: Compute can connect to Storage, Middleware, or other Compute
+      if (sourceCategory === NodeCategory.COMPUTE) {
+        const validTargets = [NodeCategory.STORAGE, NodeCategory.MIDDLEWARE, NodeCategory.COMPUTE];
+        if (!validTargets.includes(targetCategory as NodeCategory)) {
+          return false;
+        }
+      }
+
+      // All validation passed
+      return true;
+    },
+    [nodes]
+  );
+
   // Handle drop event
   const onDrop = useCallback(
     (event: React.DragEvent) => {
@@ -151,6 +211,7 @@ const CanvasInner: React.FC<CanvasProps> = ({
           onNodeClick={handleNodeClick}
           onSelectionChange={({ nodes }) => onNodeSelect(nodes[0]?.id || null)}
           onPaneClick={() => onNodeSelect(null)}
+          isValidConnection={isValidConnection}
           snapToGrid={true}
           snapGrid={[15, 15]}
           fitView

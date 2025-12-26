@@ -7,6 +7,10 @@ import { EditorPage } from './pages/EditorPage';
 
 const App: React.FC = () => {
   const [isSimulating, setIsSimulating] = useState(false);
+  const [exportHandlers, setExportHandlers] = useState<{
+    onExportPng?: () => void;
+    onExportJson?: () => void;
+  }>({});
 
   return (
     <BrowserRouter>
@@ -14,11 +18,21 @@ const App: React.FC = () => {
         <Header 
           isSimulating={isSimulating}
           onToggleSimulate={() => setIsSimulating(!isSimulating)}
+          onExportPng={exportHandlers.onExportPng}
+          onExportJson={exportHandlers.onExportJson}
         />
         <Routes>
           <Route path="/" element={<Navigate to="/projects" replace />} />
           <Route path="/projects" element={<ProjectListPage />} />
-          <Route path="/editor" element={<EditorPage isSimulating={isSimulating} />} />
+          <Route 
+            path="/editor" 
+            element={
+              <EditorPage 
+                isSimulating={isSimulating}
+                setExportHandlers={setExportHandlers}
+              />
+            } 
+          />
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>
       </div>

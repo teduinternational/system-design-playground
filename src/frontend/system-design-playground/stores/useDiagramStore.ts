@@ -4,6 +4,52 @@ import type { Edge, Node } from 'reactflow';
 import { NodeSpecs, SimulationProps, SystemEdge, SystemNode } from '@/diagram.schema';
 
 /**
+ * Serialized Diagram Format - Clean JSON without React Flow internals
+ */
+export interface SerializedDiagram {
+  metadata: {
+    id: string;
+    name: string;
+    description: string;
+    createdAt: string;
+    updatedAt: string;
+    version: number;
+    createdBy: string;
+    tags: string[];
+  };
+  nodes: Array<{
+    id: string;
+    type: string;
+    position: { x: number; y: number };
+    data: {
+      category: string;
+      technologies?: string[];
+      props?: Record<string, any>;
+      simulation?: {
+        processingTimeMs: number;
+        failureRate: number;
+        queueSize?: number;
+        currentLoad?: number;
+      };
+      iconName?: string;
+      status?: string;
+    };
+  }>;
+  edges: Array<{
+    id: string;
+    source: string;
+    target: string;
+    type?: string;
+    data?: {
+      protocol?: string;
+      auth?: string;
+      trafficWeight?: number;
+      networkLatency?: number;
+    };
+  }>;
+}
+
+/**
  * Diagram Store State Interface
  */
 interface DiagramState {
@@ -25,6 +71,10 @@ interface DiagramState {
   updateNodeSimulation: (nodeId: string, simulation: Partial<SimulationProps>) => void;
   selectNode: (nodeId: string | null) => void;
   clearDiagram: () => void;
+
+  // Serialization
+  serializeDiagram: () => SerializedDiagram;
+  loadDiagram: (diagram: SerializedDiagram) => void;
 
   // React Flow Handlers
   onNodesChange: (changes: any) => void;
@@ -178,6 +228,89 @@ export const useDiagramStore = create<DiagramState>()(
           edges: [],
           selectedNode: null,
         }),
+
+      // Serialize diagram to clean JSON format
+      serializeDiagram: () => {
+        const state = get();
+        
+        // Clean nodes - remove React Flow internals
+        const cleanNodes = state.nodes.map((node) => ({
+          id: node.id,
+          type: node.type,
+          position: { x: node.position.x, y: node.position.y },
+          data: {
+            category: node.data.category,
+            technologies: node.data.technologies,
+            props: node.data.props,
+            simulation: node.data.simulation ? {
+              processingTimeMs: node.data.simulation.processingTimeMs,
+              failureRate: node.data.simulation.failureRate,
+              queueSize: node.data.simulation.queueSize,
+              currentLoad: node.data.simulation.currentLoad,
+            } : undefined,
+            iconName: node.data.iconName,
+            status: node.data.status,
+          },
+        }));
+
+        // Clean edges - remove React Flow internals
+        const cleanEdges = state.edges.map((edge) => ({
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          type: edge.type,
+          data: edge.data,
+        }));
+
+        // Generate metadata
+        const diagram: SerializedDiagram = {
+          metadata: {
+            id: `diagram_${Date.now()}`,
+            name: 'Untitled Diagram',
+            description: 'System architecture diagram',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            version: 1,
+            createdBy: 'User',
+            tags: [],
+          },
+          nodes: cleanNodes,
+          edges: cleanEdges,
+        };
+
+        return diagram;
+      },
+
+      // Load diagram from serialized format
+      loadDiagram: (diagram: SerializedDiagram) => {
+        const nodes = diagram.nodes.map((node) => ({
+          id: node.id,
+          type: node.type || 'custom',
+          position: node.position,
+          data: {
+            category: node.data.category,
+            technologies: node.data.technologies,
+            props: node.data.props,
+            simulation: node.data.simulation,
+            iconName: node.data.iconName || 'Server',
+            status: (node.data.status as any) || 'idle',
+          },
+        })) as SystemNode[];
+
+        const edges = diagram.edges.map((edge) => ({
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          type: edge.type || 'smoothstep',
+          data: edge.data,
+        })) as SystemEdge[];
+
+        set({
+          nodes,
+          edges,
+          selectedNode: null,
+        });
+      },
 
       // React Flow onChange handlers
       onNodesChange: (changes) => {
