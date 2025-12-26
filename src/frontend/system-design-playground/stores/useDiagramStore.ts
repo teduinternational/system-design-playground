@@ -56,7 +56,7 @@ interface DiagramState {
   // State
   nodes: SystemNode[];
   edges: SystemEdge[];
-  selectedNode: SystemNode | null;
+  selectedNodeId: string | null;
 
   // Actions
   setNodes: (nodes: SystemNode[]) => void;
@@ -90,7 +90,7 @@ export const useDiagramStore = create<DiagramState>()(
       // Initial State
       nodes: [],
       edges: [],
-      selectedNode: null,
+      selectedNodeId: null,
 
       // Set all nodes
       setNodes: (nodes) => set({ nodes }),
@@ -115,7 +115,7 @@ export const useDiagramStore = create<DiagramState>()(
         set((state) => ({
           nodes: state.nodes.filter((n) => n.id !== nodeId),
           edges: state.edges.filter((e) => e.source !== nodeId && e.target !== nodeId),
-          selectedNode: state.selectedNode?.id === nodeId ? null : state.selectedNode,
+          selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId,
         })),
 
       // Remove edge by ID
@@ -134,8 +134,8 @@ export const useDiagramStore = create<DiagramState>()(
 
       // Update node data (props, simulation, etc.)
       updateNodeData: (nodeId, updates) =>
-        set((state) => {
-          const nodes = state.nodes.map((node) => {
+        set((state) => ({
+          nodes: state.nodes.map((node) => {
             if (node.id === nodeId) {
               return {
                 ...node,
@@ -146,21 +146,13 @@ export const useDiagramStore = create<DiagramState>()(
               };
             }
             return node;
-          });
-
-          // Update selectedNode if it's the updated node
-          const selectedNode =
-            state.selectedNode?.id === nodeId
-              ? nodes.find((n) => n.id === nodeId) || null
-              : state.selectedNode;
-
-          return { nodes, selectedNode };
-        }),
+          }),
+        })),
 
       // Update node specs (latency, throughput, reliability)
       updateNodeSpecs: (nodeId, specs) =>
-        set((state) => {
-          const nodes = state.nodes.map((node) => {
+        set((state) => ({
+          nodes: state.nodes.map((node) => {
             if (node.id === nodeId) {
               return {
                 ...node,
@@ -174,21 +166,13 @@ export const useDiagramStore = create<DiagramState>()(
               };
             }
             return node;
-          });
-
-          // Update selectedNode if it's the updated node
-          const selectedNode =
-            state.selectedNode?.id === nodeId
-              ? nodes.find((n) => n.id === nodeId) || null
-              : state.selectedNode;
-
-          return { nodes, selectedNode };
-        }),
+          }),
+        })),
 
       // Update node simulation props (processingTimeMs, failureRate, etc.)
       updateNodeSimulation: (nodeId, simulation) =>
-        set((state) => {
-          const nodes = state.nodes.map((node) => {
+        set((state) => ({
+          nodes: state.nodes.map((node) => {
             if (node.id === nodeId) {
               return {
                 ...node,
@@ -204,29 +188,26 @@ export const useDiagramStore = create<DiagramState>()(
               };
             }
             return node;
-          });
-
-          // Update selectedNode if it's the updated node
-          const selectedNode =
-            state.selectedNode?.id === nodeId
-              ? nodes.find((n) => n.id === nodeId) || null
-              : state.selectedNode;
-
-          return { nodes, selectedNode };
-        }),
+          }),
+        })),
 
       // Select node by ID
       selectNode: (nodeId) =>
-        set((state) => ({
-          selectedNode: nodeId ? state.nodes.find((n) => n.id === nodeId) || null : null,
-        })),
+        set((state) => {
+          // Avoid update if same node is already selected
+          if (state.selectedNodeId === nodeId) {
+            return state;
+          }
+          console.log('[Store] Selecting node:', nodeId);
+          return { selectedNodeId: nodeId };
+        }),
 
       // Clear entire diagram
       clearDiagram: () =>
         set({
           nodes: [],
           edges: [],
-          selectedNode: null,
+          selectedNodeId: null,
         }),
 
       // Serialize diagram to clean JSON format
@@ -308,7 +289,7 @@ export const useDiagramStore = create<DiagramState>()(
         set({
           nodes,
           edges,
-          selectedNode: null,
+          selectedNodeId: null,
         });
       },
 
@@ -330,17 +311,12 @@ export const useDiagramStore = create<DiagramState>()(
             }
           });
 
-          // Update selectedNode if it was updated or removed
-          let selectedNode = state.selectedNode;
-          if (selectedNode) {
-            if (removedNodeIds.includes(selectedNode.id)) {
-              selectedNode = null;
-            } else {
-              selectedNode = nodes.find((n) => n.id === selectedNode!.id) || null;
-            }
-          }
+          // Clear selectedNodeId if it was removed
+          const selectedNodeId = removedNodeIds.includes(state.selectedNodeId || '')
+            ? null
+            : state.selectedNodeId;
 
-          return { nodes, selectedNode };
+          return { nodes, selectedNodeId };
         });
       },
 
@@ -367,7 +343,7 @@ export const useDiagramStore = create<DiagramState>()(
  */
 export const useNode = (nodeId: string | null) => {
   return useDiagramStore((state) =>
-    nodeId ? state.nodes.find((n) => n.id === nodeId) : null
+    nodeId ? state.nodes.find((n) => n.id === nodeId) || null : null
   );
 };
 

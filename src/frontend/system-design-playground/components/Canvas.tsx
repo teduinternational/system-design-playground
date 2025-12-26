@@ -180,7 +180,6 @@ const CanvasInner: React.FC<CanvasProps> = ({
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  // Handle node click
   const handleNodeClick = useCallback(
     (_event: React.MouseEvent, node: Node) => {
       onNodeSelect(node.id);
@@ -209,7 +208,6 @@ const CanvasInner: React.FC<CanvasProps> = ({
           onConnect={onConnect}
           nodeTypes={nodeTypes}
           onNodeClick={handleNodeClick}
-          onSelectionChange={({ nodes }) => onNodeSelect(nodes[0]?.id || null)}
           onPaneClick={() => onNodeSelect(null)}
           isValidConnection={isValidConnection}
           snapToGrid={true}

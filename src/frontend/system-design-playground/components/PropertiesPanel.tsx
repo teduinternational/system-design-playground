@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { 
   Server, 
   Cpu, 
@@ -8,20 +8,20 @@ import {
   MoreHorizontal,
   ChevronDown
 } from 'lucide-react';
-import { useDiagramStore } from '../stores/useDiagramStore';
+import { useDiagramStore, useNode } from '../stores/useDiagramStore';
 
-export const PropertiesPanel: React.FC = () => {
-  // Only subscribe to the ID to prevent re-renders
-  const selectedNodeId = useDiagramStore((state) => state.selectedNode?.id);
-  const nodes = useDiagramStore((state) => state.nodes);
+const PropertiesPanelComponent: React.FC = () => {
+  // Subscribe only to selectedNodeId - this will only change when selection changes
+  const selectedNodeId = useDiagramStore((state) => state.selectedNodeId);
+  
+  // Use optimized hook to get the node
+  const selectedNode = useNode(selectedNodeId);
+  
+  // Debug: Log renders
+  console.log('[PropertiesPanel] Render:', { selectedNodeId, hasNode: !!selectedNode });
   
   const updateNodeSimulation = useDiagramStore((state) => state.updateNodeSimulation);
   const updateNodeSpecs = useDiagramStore((state) => state.updateNodeSpecs);
-
-  // Memoize the selected node lookup
-  const selectedNode = useMemo(() => {
-    return selectedNodeId ? nodes.find(n => n.id === selectedNodeId) || null : null;
-  }, [selectedNodeId, nodes]);
 
   const handleSimulationChange = (field: string, value: number) => {
     if (!selectedNode) return;
@@ -234,3 +234,6 @@ export const PropertiesPanel: React.FC = () => {
     </aside>
   );
 };
+
+// Memoize component to prevent unnecessary re-renders from parent
+export const PropertiesPanel = React.memo(PropertiesPanelComponent);
