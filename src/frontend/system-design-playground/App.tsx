@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Header } from './components/Header';
+import { ToastContainer } from './components/Toast';
 import { ProjectListPage } from './pages/ProjectListPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { EditorPage } from './pages/EditorPage';
@@ -11,6 +12,8 @@ const App: React.FC = () => {
     onExportPng?: () => void;
     onExportJson?: () => void;
     onSave?: () => void;
+    onSaveVersion?: () => void;
+    onShowVersionHistory?: () => void;
   }>({});
 
   return (
@@ -22,6 +25,8 @@ const App: React.FC = () => {
           onExportPng={exportHandlers.onExportPng}
           onExportJson={exportHandlers.onExportJson}
           onSave={exportHandlers.onSave}
+          onSaveVersion={exportHandlers.onSaveVersion}
+          onShowVersionHistory={exportHandlers.onShowVersionHistory}
         />
         <Routes>
           <Route path="/" element={<Navigate to="/projects" replace />} />
@@ -37,6 +42,7 @@ const App: React.FC = () => {
           />
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>
+        <ToastContainer />
       </div>
     </BrowserRouter>
   );

@@ -14,6 +14,10 @@ export interface ScenarioDto {
   createdAt: string;
 }
 
+/**
+ * DTO để tạo Scenario mới
+ * Note: diagramId được lấy từ URL route, không gửi trong body
+ */
 export interface CreateScenarioDto {
   name: string;
   versionTag: string;

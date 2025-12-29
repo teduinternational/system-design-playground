@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Play, Share2, Settings, Network, Square, Download, ChevronDown, Image, FileJson, Copy, Save } from 'lucide-react';
+import { Play, Share2, Settings, Network, Square, Download, ChevronDown, Image, FileJson, Copy, Save, GitBranch } from 'lucide-react';
 
 interface HeaderProps {
   isSimulating: boolean;
@@ -8,6 +8,8 @@ interface HeaderProps {
   onExportPng?: () => void;
   onExportJson?: () => void;
   onSave?: () => void;
+  onSaveVersion?: () => void;
+  onShowVersionHistory?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
@@ -15,7 +17,9 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleSimulate,
   onExportPng,
   onExportJson,
-  onSave
+  onSave,
+  onSaveVersion,
+  onShowVersionHistory
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -98,6 +102,26 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Save className="w-3.5 h-3.5" />
             Save
+          </button>
+        )}
+        
+        {isEditor && (
+          <button 
+            onClick={onSaveVersion}
+            className="bg-blue-600 hover:bg-blue-700 transition-colors text-white h-8 px-3 rounded text-xs font-medium flex items-center gap-1.5"
+          >
+            <GitBranch className="w-3.5 h-3.5" />
+            Save Version
+          </button>
+        )}
+        
+        {isEditor && (
+          <button 
+            onClick={onShowVersionHistory}
+            className="text-secondary hover:text-white hover:bg-surface-hover h-8 px-3 rounded text-xs font-medium flex items-center gap-1.5 transition-colors"
+          >
+            <GitBranch className="w-3.5 h-3.5" />
+            History
           </button>
         )}
         

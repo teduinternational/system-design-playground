@@ -17,9 +17,12 @@ public sealed record ScenarioDto
     public DateTime? UpdatedAt { get; init; }
 }
 
+/// <summary>
+/// DTO để tạo Scenario mới
+/// Note: DiagramId được lấy từ URL route, không cần gửi trong body
+/// </summary>
 public sealed record CreateScenarioDto
 {
-    public required Guid DiagramId { get; init; }
     public required string Name { get; init; }
     public required string VersionTag { get; init; }
     public string ChangeLog { get; init; } = string.Empty;

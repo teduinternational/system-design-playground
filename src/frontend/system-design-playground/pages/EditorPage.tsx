@@ -1,12 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Sidebar } from '../components/Sidebar';
 import { PropertiesPanel } from '../components/PropertiesPanel';
 import { Canvas } from '../components/Canvas';
 import { MetricsPanel } from '../components/MetricsPanel';
+import { VersionHistory } from '../components/VersionHistory';
+import { SaveDiagramModal } from '../components/SaveDiagramModal';
+import { SaveVersionModal } from '../components/SaveVersionModal';
+import { toast } from '../components/Toast';
 import { useDiagramStore } from '../stores/useDiagramStore';
 import { useDiagramPersistence } from '../hooks/useDiagramPersistence';
 import { useApiDiagramPersistence } from '../hooks/useApiDiagramPersistence';
+import { scenarioApi } from '../services/api';
 import { exportCanvasToPng } from '../utils/exportCanvas';
 import sampleDiagram from '../mock-data/sample-diagram.json';
 
@@ -16,6 +21,8 @@ interface EditorPageProps {
     onExportPng?: () => void;
     onExportJson?: () => void;
     onSave?: () => void;
+    onSaveVersion?: () => void;
+    onShowVersionHistory?: () => void;
   }) => void;
 }
 
@@ -25,6 +32,9 @@ export const EditorPage: React.FC<EditorPageProps> = ({
 }) => {
   const [searchParams] = useSearchParams();
   const diagramId = searchParams.get('id');
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showVersionModal, setShowVersionModal] = useState(false);
   
   const nodes = useDiagramStore((state) => state.nodes);
   const edges = useDiagramStore((state) => state.edges);
@@ -35,6 +45,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({
   const addEdge = useDiagramStore((state) => state.addEdge);
   const selectNode = useDiagramStore((state) => state.selectNode);
   const loadDiagram = useDiagramStore((state) => state.loadDiagram);
+  const serializeDiagram = useDiagramStore((state) => state.serializeDiagram);
 
   // Enable auto-persistence to localStorage and get export functions
   const { exportDiagram } = useDiagramPersistence();
@@ -83,8 +94,8 @@ export const EditorPage: React.FC<EditorPageProps> = ({
   const handleExportPng = async () => {
     const success = await exportCanvasToPng('system-diagram.png');
     if (success) {
-      // Could show a success toast notification here
       console.log('🎉 Diagram exported successfully!');
+      toast.success('Diagram exported as PNG!');
     }
   };
 
@@ -92,6 +103,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({
     const success = exportDiagram('system-diagram.json');
     if (success) {
       console.log('🎉 JSON exported successfully!');
+      toast.success('Diagram exported as JSON!');
     }
   };
 
@@ -101,26 +113,76 @@ export const EditorPage: React.FC<EditorPageProps> = ({
       // Update existing diagram
       const result = await updateDiagramOnApi(diagramId);
       if (result) {
-        console.log('✅ Diagram updated on API');
-        alert('Diagram saved successfully!');
+        toast.success('Diagram saved successfully!');
       } else {
-        alert('Failed to save diagram. Check console for details.');
+        toast.error('Failed to save diagram');
       }
     } else {
-      // Create new diagram
-      const diagramName = prompt('Enter diagram name:', 'Untitled Diagram');
-      if (!diagramName) return;
-      
-      const result = await saveDiagramToApi(diagramName);
-      if (result) {
-        console.log('✅ New diagram created on API');
-        alert(`Diagram saved successfully! ID: ${result.id}`);
-        // Update URL with new diagram ID
-        window.history.replaceState({}, '', `/editor?id=${result.id}`);
-      } else {
-        alert('Failed to save diagram. Check console for details.');
-      }
+      // Show modal for new diagram
+      setShowSaveModal(true);
     }
+  };
+
+  // Handle save from modal
+  const handleSaveFromModal = async (name: string, description: string) => {
+    const result = await saveDiagramToApi(name, description);
+    if (result) {
+      console.log('✅ New diagram created on API');
+      toast.success(`Diagram "${name}" created successfully!`);
+      // Update URL with new diagram ID
+      window.history.replaceState({}, '', `/editor?id=${result.id}`);
+    } else {
+      toast.error('Failed to create diagram');
+      throw new Error('Failed to create diagram');
+    }
+  };
+
+  // Save version (create scenario)
+  const handleSaveVersion = () => {
+    if (!diagramId) {
+      toast.warning('Please save the diagram first before creating a version');
+      return;
+    }
+    setShowVersionModal(true);
+  };
+
+  // Handle save version from modal
+  const handleSaveVersionFromModal = async (
+    versionTag: string,
+    versionName: string,
+    changeLog: string
+  ) => {
+    try {
+      const diagram = serializeDiagram();
+      const contentJson = JSON.stringify({
+        metadata: diagram.metadata,
+        nodes: diagram.nodes,
+        edges: diagram.edges,
+      });
+      
+      await scenarioApi.create(diagramId!, {
+        name: versionName,
+        versionTag,
+        contentJson,
+        changeLog,
+        isSnapshot: true
+      });
+      
+      toast.success(`Version ${versionTag} saved successfully!`);
+    } catch (error) {
+      console.error('Failed to save version:', error);
+      toast.error('Failed to save version');
+      throw error;
+    }
+  };
+
+  // Show version history
+  const handleShowVersionHistory = () => {
+    if (!diagramId) {
+      toast.warning('Please save the diagram first to view version history');
+      return;
+    }
+    setShowVersionHistory(true);
   };
 
   // Register export handlers with parent component
@@ -129,6 +191,8 @@ export const EditorPage: React.FC<EditorPageProps> = ({
       onExportPng: handleExportPng,
       onExportJson: handleExportJson,
       onSave: handleSave,
+      onSaveVersion: handleSaveVersion,
+      onShowVersionHistory: handleShowVersionHistory,
     });
   }, [setExportHandlers, diagramId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -151,21 +215,47 @@ export const EditorPage: React.FC<EditorPageProps> = ({
   }, [isSimulating]);
 
   return (
-    <div className="flex flex-1 overflow-hidden relative">
-      <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0">
-        <Canvas 
-          nodes={nodes as any}
-          edges={edges as any}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onNodeSelect={(nodeId) => selectNode(nodeId)}
-          isSimulating={isSimulating}
-        />
-        <MetricsPanel />
+    <>
+      <div className="flex flex-1 overflow-hidden relative">
+        <Sidebar />
+        <div className="flex-1 flex flex-col min-w-0">
+          <Canvas 
+            nodes={nodes as any}
+            edges={edges as any}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onNodeSelect={(nodeId) => selectNode(nodeId)}
+            isSimulating={isSimulating}
+          />
+          <MetricsPanel />
+        </div>
+        <PropertiesPanel /> 
       </div>
-      <PropertiesPanel /> 
-    </div>
+      
+      {/* Save Diagram Modal */}
+      <SaveDiagramModal
+        isOpen={showSaveModal}
+        onClose={() => setShowSaveModal(false)}
+        onSave={handleSaveFromModal}
+        title="Create New Diagram"
+        mode="create"
+      />
+
+      {/* Save Version Modal */}
+      <SaveVersionModal
+        isOpen={showVersionModal}
+        onClose={() => setShowVersionModal(false)}
+        onSave={handleSaveVersionFromModal}
+      />
+
+      {/* Version History Modal */}
+      {showVersionHistory && diagramId && (
+        <VersionHistory 
+          diagramId={diagramId}
+          onClose={() => setShowVersionHistory(false)}
+        />
+      )}
+    </>
   );
 };
