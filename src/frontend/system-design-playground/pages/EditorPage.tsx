@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Sidebar } from '../components/Sidebar';
 import { PropertiesPanel } from '../components/PropertiesPanel';
 import { Canvas } from '../components/Canvas';
 import { MetricsPanel } from '../components/MetricsPanel';
 import { useDiagramStore } from '../stores/useDiagramStore';
 import { useDiagramPersistence } from '../hooks/useDiagramPersistence';
+import { useApiDiagramPersistence } from '../hooks/useApiDiagramPersistence';
 import { exportCanvasToPng } from '../utils/exportCanvas';
 import sampleDiagram from '../mock-data/sample-diagram.json';
 
@@ -13,6 +15,7 @@ interface EditorPageProps {
   setExportHandlers: (handlers: {
     onExportPng?: () => void;
     onExportJson?: () => void;
+    onSave?: () => void;
   }) => void;
 }
 
@@ -20,6 +23,9 @@ export const EditorPage: React.FC<EditorPageProps> = ({
   isSimulating, 
   setExportHandlers 
 }) => {
+  const [searchParams] = useSearchParams();
+  const diagramId = searchParams.get('id');
+  
   const nodes = useDiagramStore((state) => state.nodes);
   const edges = useDiagramStore((state) => state.edges);
   const setNodes = useDiagramStore((state) => state.setNodes);
@@ -32,18 +38,38 @@ export const EditorPage: React.FC<EditorPageProps> = ({
 
   // Enable auto-persistence to localStorage and get export functions
   const { exportDiagram } = useDiagramPersistence();
+  
+  // API persistence hooks
+  const { 
+    loadDiagramFromApi, 
+    saveDiagramToApi, 
+    updateDiagramOnApi,
+    isLoading 
+  } = useApiDiagramPersistence();
 
-  // Initialize store with sample diagram data on mount (if no saved data)
+  // Load diagram from API if ID is provided, otherwise load sample or localStorage
   useEffect(() => {
-    // Check if there's saved data in localStorage
-    const savedData = localStorage.getItem('system-design-diagram');
+    const loadInitialData = async () => {
+      if (diagramId) {
+        // Load from API if ID is in URL
+        const success = await loadDiagramFromApi(diagramId);
+        if (success) {
+          console.log('📦 Loaded diagram from API:', diagramId);
+        }
+      } else {
+        // Check if there's saved data in localStorage
+        const savedData = localStorage.getItem('system-design-diagram');
+        
+        if (!savedData && nodes.length === 0) {
+          // Load sample diagram if no saved data exists
+          loadDiagram(sampleDiagram as any);
+          console.log('📦 Loaded sample diagram');
+        }
+      }
+    };
     
-    if (!savedData && nodes.length === 0) {
-      // Load sample diagram if no saved data exists
-      loadDiagram(sampleDiagram as any);
-      console.log('📦 Loaded sample diagram');
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    loadInitialData();
+  }, [diagramId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onConnect = (params: any) => {
     addEdge({
@@ -69,13 +95,42 @@ export const EditorPage: React.FC<EditorPageProps> = ({
     }
   };
 
+  // Save diagram to API
+  const handleSave = async () => {
+    if (diagramId) {
+      // Update existing diagram
+      const result = await updateDiagramOnApi(diagramId);
+      if (result) {
+        console.log('✅ Diagram updated on API');
+        alert('Diagram saved successfully!');
+      } else {
+        alert('Failed to save diagram. Check console for details.');
+      }
+    } else {
+      // Create new diagram
+      const diagramName = prompt('Enter diagram name:', 'Untitled Diagram');
+      if (!diagramName) return;
+      
+      const result = await saveDiagramToApi(diagramName);
+      if (result) {
+        console.log('✅ New diagram created on API');
+        alert(`Diagram saved successfully! ID: ${result.id}`);
+        // Update URL with new diagram ID
+        window.history.replaceState({}, '', `/editor?id=${result.id}`);
+      } else {
+        alert('Failed to save diagram. Check console for details.');
+      }
+    }
+  };
+
   // Register export handlers with parent component
   useEffect(() => {
     setExportHandlers({
       onExportPng: handleExportPng,
       onExportJson: handleExportJson,
+      onSave: handleSave,
     });
-  }, [setExportHandlers]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [setExportHandlers, diagramId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Simulation Logic Loop
   useEffect(() => {

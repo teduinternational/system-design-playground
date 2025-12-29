@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Play, Share2, Settings, Network, Square, Download, ChevronDown, Image, FileJson, Copy } from 'lucide-react';
+import { Play, Share2, Settings, Network, Square, Download, ChevronDown, Image, FileJson, Copy, Save } from 'lucide-react';
 
 interface HeaderProps {
   isSimulating: boolean;
   onToggleSimulate: () => void;
   onExportPng?: () => void;
   onExportJson?: () => void;
+  onSave?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
   isSimulating, 
   onToggleSimulate,
   onExportPng,
-  onExportJson
+  onExportJson,
+  onSave
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -89,6 +91,16 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         )}
 
+        {isEditor && (
+          <button 
+            onClick={onSave}
+            className="bg-green-600 hover:bg-green-700 transition-colors text-white h-8 px-3 rounded text-xs font-medium flex items-center gap-1.5 shadow-[0_0_20px_-5px_rgba(16,185,129,0.3)]"
+          >
+            <Save className="w-3.5 h-3.5" />
+            Save
+          </button>
+        )}
+        
         {isEditor && (
           <div className="relative">
             <button 

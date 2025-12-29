@@ -10,6 +10,7 @@ const App: React.FC = () => {
   const [exportHandlers, setExportHandlers] = useState<{
     onExportPng?: () => void;
     onExportJson?: () => void;
+    onSave?: () => void;
   }>({});
 
   return (
@@ -20,6 +21,7 @@ const App: React.FC = () => {
           onToggleSimulate={() => setIsSimulating(!isSimulating)}
           onExportPng={exportHandlers.onExportPng}
           onExportJson={exportHandlers.onExportJson}
+          onSave={exportHandlers.onSave}
         />
         <Routes>
           <Route path="/" element={<Navigate to="/projects" replace />} />
