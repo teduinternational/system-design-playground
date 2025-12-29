@@ -1,0 +1,286 @@
+### Test Simulation API với sample data
+
+# 1. Test longest paths từ tất cả entry points
+POST https://localhost:7074/api/simulation/longest-paths
+Content-Type: application/json
+
+{
+  "nodes": [
+    {
+      "id": "client",
+      "type": "Client",
+      "latencyMs": 5,
+      "isEntryPoint": true
+    },
+    {
+      "id": "loadbalancer",
+      "type": "LoadBalancer",
+      "latencyMs": 2
+    },
+    {
+      "id": "api-server-1",
+      "type": "APIServer",
+      "latencyMs": 10
+    },
+    {
+      "id": "api-server-2",
+      "type": "APIServer",
+      "latencyMs": 15
+    },
+    {
+      "id": "cache",
+      "type": "Cache",
+      "latencyMs": 1
+    },
+    {
+      "id": "database",
+      "type": "Database",
+      "latencyMs": 50
+    },
+    {
+      "id": "response",
+      "type": "Response",
+      "latencyMs": 3
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "client",
+      "target": "loadbalancer",
+      "latencyMs": 10
+    },
+    {
+      "id": "e2",
+      "source": "loadbalancer",
+      "target": "api-server-1",
+      "latencyMs": 5
+    },
+    {
+      "id": "e3",
+      "source": "loadbalancer",
+      "target": "api-server-2",
+      "latencyMs": 5
+    },
+    {
+      "id": "e4",
+      "source": "api-server-1",
+      "target": "cache",
+      "latencyMs": 2
+    },
+    {
+      "id": "e5",
+      "source": "api-server-2",
+      "target": "cache",
+      "latencyMs": 2
+    },
+    {
+      "id": "e6",
+      "source": "cache",
+      "target": "database",
+      "latencyMs": 3
+    },
+    {
+      "id": "e7",
+      "source": "database",
+      "target": "response",
+      "latencyMs": 8
+    },
+    {
+      "id": "e8",
+      "source": "api-server-1",
+      "target": "response",
+      "latencyMs": 4
+    }
+  ]
+}
+
+###
+
+# 2. Test longest path từ node cụ thể
+POST https://localhost:7074/api/simulation/longest-path/client
+Content-Type: application/json
+
+{
+  "nodes": [
+    {
+      "id": "client",
+      "type": "Client",
+      "latencyMs": 5,
+      "isEntryPoint": true
+    },
+    {
+      "id": "loadbalancer",
+      "type": "LoadBalancer",
+      "latencyMs": 2
+    },
+    {
+      "id": "api-server-1",
+      "type": "APIServer",
+      "latencyMs": 10
+    },
+    {
+      "id": "database",
+      "type": "Database",
+      "latencyMs": 50
+    },
+    {
+      "id": "response",
+      "type": "Response",
+      "latencyMs": 3
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "client",
+      "target": "loadbalancer",
+      "latencyMs": 10
+    },
+    {
+      "id": "e2",
+      "source": "loadbalancer",
+      "target": "api-server-1",
+      "latencyMs": 5
+    },
+    {
+      "id": "e3",
+      "source": "api-server-1",
+      "target": "database",
+      "latencyMs": 8
+    },
+    {
+      "id": "e4",
+      "source": "database",
+      "target": "response",
+      "latencyMs": 12
+    }
+  ]
+}
+
+###
+
+# 3. Test analyze system performance - complex scenario
+POST https://localhost:7074/api/simulation/analyze
+Content-Type: application/json
+
+{
+  "nodes": [
+    {
+      "id": "mobile-app",
+      "type": "MobileClient",
+      "latencyMs": 8,
+      "isEntryPoint": true
+    },
+    {
+      "id": "web-app",
+      "type": "WebClient",
+      "latencyMs": 3,
+      "isEntryPoint": true
+    },
+    {
+      "id": "cdn",
+      "type": "CDN",
+      "latencyMs": 5
+    },
+    {
+      "id": "api-gateway",
+      "type": "APIGateway",
+      "latencyMs": 4
+    },
+    {
+      "id": "auth-service",
+      "type": "AuthService",
+      "latencyMs": 15
+    },
+    {
+      "id": "user-service",
+      "type": "UserService",
+      "latencyMs": 20
+    },
+    {
+      "id": "redis-cache",
+      "type": "Cache",
+      "latencyMs": 2
+    },
+    {
+      "id": "postgres-db",
+      "type": "Database",
+      "latencyMs": 45
+    },
+    {
+      "id": "elasticsearch",
+      "type": "SearchEngine",
+      "latencyMs": 30
+    },
+    {
+      "id": "result",
+      "type": "Response",
+      "latencyMs": 5
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "mobile-app",
+      "target": "cdn",
+      "latencyMs": 20
+    },
+    {
+      "id": "e2",
+      "source": "web-app",
+      "target": "cdn",
+      "latencyMs": 8
+    },
+    {
+      "id": "e3",
+      "source": "cdn",
+      "target": "api-gateway",
+      "latencyMs": 6
+    },
+    {
+      "id": "e4",
+      "source": "api-gateway",
+      "target": "auth-service",
+      "latencyMs": 3
+    },
+    {
+      "id": "e5",
+      "source": "auth-service",
+      "target": "redis-cache",
+      "latencyMs": 2
+    },
+    {
+      "id": "e6",
+      "source": "redis-cache",
+      "target": "user-service",
+      "latencyMs": 1
+    },
+    {
+      "id": "e7",
+      "source": "user-service",
+      "target": "postgres-db",
+      "latencyMs": 7
+    },
+    {
+      "id": "e8",
+      "source": "user-service",
+      "target": "elasticsearch",
+      "latencyMs": 5
+    },
+    {
+      "id": "e9",
+      "source": "postgres-db",
+      "target": "result",
+      "latencyMs": 10
+    },
+    {
+      "id": "e10",
+      "source": "elasticsearch",
+      "target": "result",
+      "latencyMs": 8
+    }
+  ]
+}
+
+###

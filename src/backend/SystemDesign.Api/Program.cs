@@ -43,5 +43,6 @@ app.UseHttpsRedirection();
 app.MapDiagramEndpoints();
 app.MapScenarioEndpoints();
 app.MapRunEndpoints();
+app.MapSimulationEndpoints();
 
 app.Run();

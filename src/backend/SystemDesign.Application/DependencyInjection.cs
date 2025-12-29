@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using SystemDesign.Application.Services;
 
 namespace SystemDesign.Application;
 
@@ -8,6 +9,9 @@ public static class DependencyInjection
     {
         // Đăng ký MediatR
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
+        
+        // Đăng ký Simulation Engine
+        services.AddScoped<ISimulationEngine, SimulationEngine>();
 
         return services;
     }
