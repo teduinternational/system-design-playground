@@ -1,6 +1,6 @@
 namespace SystemDesign.Domain.Models;
 
-using SystemDesign.Domain.Entities;
+using SystemDesign.Domain.Enums;
 
 /// <summary>
 /// Thông số kỹ thuật cho mô phỏng node

@@ -68,6 +68,42 @@ public sealed class DiagramService(IRepository<Diagram> repository) : IDiagramSe
         }
     }
 
+    public async Task<Result<IEnumerable<DiagramDto>>> GetByUserAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var diagrams = await repository.FindAsync(
+                d => !d.IsDeleted && d.CreatedBy == userId,
+                cancellationToken
+            );
+            
+            var dtos = diagrams.Select(MapToDto);
+            return Result<IEnumerable<DiagramDto>>.Success(dtos);
+        }
+        catch (Exception ex)
+        {
+            return Result<IEnumerable<DiagramDto>>.Failure($"Lỗi khi lấy diagram theo user: {ex.Message}");
+        }
+    }
+
+    public async Task<Result<IEnumerable<DiagramDto>>> SearchByNameAsync(string keyword, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var diagrams = await repository.FindAsync(
+                d => !d.IsDeleted && d.Name.Contains(keyword),
+                cancellationToken
+            );
+            
+            var dtos = diagrams.Select(MapToDto);
+            return Result<IEnumerable<DiagramDto>>.Success(dtos);
+        }
+        catch (Exception ex)
+        {
+            return Result<IEnumerable<DiagramDto>>.Failure($"Lỗi khi tìm kiếm diagram: {ex.Message}");
+        }
+    }
+
     public async Task<Result<DiagramDto>> UpdateAsync(Guid id, UpdateDiagramDto dto, CancellationToken cancellationToken = default)
     {
         try

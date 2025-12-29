@@ -25,16 +25,30 @@ public static class DiagramEndpoints
         .WithName("CreateDiagram")
         .WithSummary("Tạo diagram mới");
 
-        // GET /api/diagrams - Lấy tất cả diagrams
-        group.MapGet("/", async (IDiagramService service, CancellationToken ct) =>
+        // GET /api/diagrams - Lấy tất cả diagrams (với optional query params)
+        group.MapGet("/", async (string? userId, string? search, IDiagramService service, CancellationToken ct) =>
         {
-            var result = await service.GetAllAsync(ct);
+            Result<IEnumerable<DiagramDto>> result;
+            
+            if (!string.IsNullOrWhiteSpace(userId))
+            {
+                result = await service.GetByUserAsync(userId, ct);
+            }
+            else if (!string.IsNullOrWhiteSpace(search))
+            {
+                result = await service.SearchByNameAsync(search, ct);
+            }
+            else
+            {
+                result = await service.GetAllAsync(ct);
+            }
+            
             return result.IsSuccess
                 ? Results.Ok(result.Value)
                 : Results.BadRequest(new { error = result.Error });
         })
         .WithName("GetAllDiagrams")
-        .WithSummary("Lấy tất cả diagrams");
+        .WithSummary("Lấy diagrams (hỗ trợ filter theo userId hoặc search theo name)");
 
         // GET /api/diagrams/{id} - Lấy diagram theo ID
         group.MapGet("/{id:guid}", async (Guid id, IDiagramService service, CancellationToken ct) =>

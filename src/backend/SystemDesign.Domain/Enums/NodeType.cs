@@ -1,4 +1,4 @@
-namespace SystemDesign.Domain.Entities;
+namespace SystemDesign.Domain.Enums;
 
 /// <summary>
 /// Các loại node hỗ trợ trong system design, phân loại theo 5 nhóm chính

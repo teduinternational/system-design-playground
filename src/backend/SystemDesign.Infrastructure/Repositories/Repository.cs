@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SystemDesign.Application.Interfaces;
+using SystemDesign.Domain;
 using SystemDesign.Domain.Entities;
 using SystemDesign.Infrastructure.Persistence;
 
@@ -22,6 +23,16 @@ public sealed class Repository<T>(ApplicationDbContext context) : IRepository<T>
     public async Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await _dbSet.ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<T>> FindAsync(System.Linq.Expressions.Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet.Where(predicate).ToListAsync(cancellationToken);
+    }
+
+    public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet.AnyAsync(e => e.Id == id, cancellationToken);
     }
 
     public async Task<T> AddAsync(T entity, CancellationToken cancellationToken = default)

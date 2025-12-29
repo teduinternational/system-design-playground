@@ -1,4 +1,4 @@
-namespace SystemDesign.Domain.Entities;
+namespace SystemDesign.Domain.Enums;
 
 /// <summary>
 /// Node Categories - phân loại theo 5 nhóm chính

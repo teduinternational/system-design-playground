@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using SystemDesign.Application.Interfaces;
+using SystemDesign.Domain;
 using SystemDesign.Infrastructure.Repositories;
 
 namespace SystemDesign.Infrastructure.Persistence;
