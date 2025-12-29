@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using SystemDesign.Application.Interfaces;
 using SystemDesign.Domain;
 using SystemDesign.Domain.Entities;
 using SystemDesign.Infrastructure.Persistence;

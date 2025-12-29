@@ -1,6 +1,7 @@
 using SystemDesign.Api.Endpoints;
 using SystemDesign.Application;
 using SystemDesign.Infrastructure.Persistence;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,19 +9,39 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplication();
 builder.Services.AddPersistence(builder.Configuration);
 
+// Cấu hình OpenAPI (Swagger) cho .NET 10
 builder.Services.AddOpenApi();
+
+// Cấu hình CORS cho development
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    // Sử dụng OpenAPI UI (Swagger UI trong .NET 10)
     app.MapOpenApi();
+    
+    // Thêm Scalar UI (thay thế cho SwaggerUI, hiện đại hơn)
+    app.MapScalarApiReference();
+    
+    app.UseCors();
 }
 
 app.UseHttpsRedirection();
 
-// Map endpoints
+// Map tất cả endpoints
 app.MapDiagramEndpoints();
+app.MapScenarioEndpoints();
+app.MapRunEndpoints();
 
 app.Run();

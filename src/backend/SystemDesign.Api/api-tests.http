@@ -1,0 +1,211 @@
+### System Design Playground API Testing
+### Sử dụng REST Client extension trong VS Code
+
+@baseUrl = http://localhost:5000
+@diagramId = 
+@scenarioId = 
+@runId = 
+
+###############################################
+# DIAGRAMS ENDPOINTS
+###############################################
+
+### 1. Tạo diagram mới
+POST {{baseUrl}}/api/diagrams
+Content-Type: application/json
+
+{
+  "name": "E-Commerce Platform",
+  "description": "Scalable microservices architecture for e-commerce",
+  "jsonData": "{\"nodes\":[],\"edges\":[]}",
+  "createdBy": "admin"
+}
+
+### 2. Lấy tất cả diagrams
+GET {{baseUrl}}/api/diagrams
+
+### 3. Filter diagrams theo user
+GET {{baseUrl}}/api/diagrams?userId=admin
+
+### 4. Search diagrams theo tên
+GET {{baseUrl}}/api/diagrams?search=ecommerce
+
+### 5. Lấy diagram theo ID
+GET {{baseUrl}}/api/diagrams/{{diagramId}}
+
+### 6. Cập nhật diagram
+PUT {{baseUrl}}/api/diagrams/{{diagramId}}
+Content-Type: application/json
+
+{
+  "name": "E-Commerce Platform v2",
+  "description": "Updated architecture with Redis cache",
+  "jsonData": "{\"nodes\":[],\"edges\":[]}"
+}
+
+### 7. Xóa diagram
+DELETE {{baseUrl}}/api/diagrams/{{diagramId}}
+
+###############################################
+# SCENARIOS ENDPOINTS
+###############################################
+
+### 8. Tạo scenario mới cho diagram
+POST {{baseUrl}}/api/diagrams/{{diagramId}}/scenarios
+Content-Type: application/json
+
+{
+  "name": "Phương án Microservices",
+  "versionTag": "1.0.0",
+  "contentJson": "{\"nodes\":[{\"id\":\"node1\",\"type\":\"service\",\"data\":{\"label\":\"API Gateway\"}}],\"edges\":[]}",
+  "changeLog": "Initial microservices design",
+  "isSnapshot": false
+}
+
+### 9. Lấy tất cả scenarios của diagram
+GET {{baseUrl}}/api/diagrams/{{diagramId}}/scenarios
+
+### 10. Lấy scenario theo ID
+GET {{baseUrl}}/api/scenarios/{{scenarioId}}
+
+### 11. Cập nhật scenario
+PUT {{baseUrl}}/api/scenarios/{{scenarioId}}
+Content-Type: application/json
+
+{
+  "name": "Phương án Microservices v2",
+  "contentJson": "{\"nodes\":[{\"id\":\"node1\",\"type\":\"service\",\"data\":{\"label\":\"API Gateway\"}},{\"id\":\"node2\",\"type\":\"cache\",\"data\":{\"label\":\"Redis\"}}],\"edges\":[]}",
+  "changeLog": "Added Redis cache layer"
+}
+
+###############################################
+# RUNS ENDPOINTS
+###############################################
+
+### 12. Tạo run mới (bắt đầu simulation)
+POST {{baseUrl}}/api/runs
+Content-Type: application/json
+
+{
+  "scenarioId": "{{scenarioId}}",
+  "runName": "Load Test - 1000 concurrent users",
+  "environmentParams": "{\"concurrentUsers\":1000,\"duration\":60,\"rampUpTime\":10}"
+}
+
+### 13. Lấy lịch sử runs của scenario
+GET {{baseUrl}}/api/scenarios/{{scenarioId}}/runs
+
+### 14. Lấy run theo ID
+GET {{baseUrl}}/api/runs/{{runId}}
+
+### 15. Cập nhật run status - Processing
+PATCH {{baseUrl}}/api/runs/{{runId}}/status
+Content-Type: application/json
+
+{
+  "status": 1
+}
+
+### 16. Cập nhật run status - Completed với metrics
+PATCH {{baseUrl}}/api/runs/{{runId}}/status
+Content-Type: application/json
+
+{
+  "status": 2,
+  "averageLatencyMs": 125.5,
+  "throughputRps": 850.3,
+  "successfulRequests": 76527,
+  "failedRequests": 473,
+  "errorRate": 0.61,
+  "resultJson": "{\"apiGateway\":{\"avgLatency\":50},\"authService\":{\"avgLatency\":30},\"orderService\":{\"avgLatency\":120}}"
+}
+
+### 17. Cập nhật run status - Failed
+PATCH {{baseUrl}}/api/runs/{{runId}}/status
+Content-Type: application/json
+
+{
+  "status": 3,
+  "errorMessage": "Database connection timeout after 30s"
+}
+
+###############################################
+# WORKFLOW COMPLETE EXAMPLE
+###############################################
+
+### Example 1: Tạo diagram -> scenario -> run simulation
+# Step 1: Create Diagram
+POST {{baseUrl}}/api/diagrams
+Content-Type: application/json
+
+{
+  "name": "Social Media Platform",
+  "description": "High-scale social media architecture",
+  "jsonData": "{}",
+  "createdBy": "architect-01"
+}
+
+# Copy diagram ID vào @diagramId ở trên
+
+###
+# Step 2: Create Scenario for that Diagram  
+POST {{baseUrl}}/api/diagrams/YOUR-DIAGRAM-ID-HERE/scenarios
+Content-Type: application/json
+
+{
+  "name": "Initial Monolith Design",
+  "versionTag": "0.1.0",
+  "contentJson": "{\"nodes\":[{\"id\":\"app\",\"type\":\"application\"}],\"edges\":[]}",
+  "changeLog": "First version - monolithic architecture"
+}
+
+# Copy scenario ID vào @scenarioId ở trên
+
+###
+# Step 3: Run Simulation
+POST {{baseUrl}}/api/runs
+Content-Type: application/json
+
+{
+  "scenarioId": "YOUR-SCENARIO-ID-HERE",
+  "runName": "Baseline Performance Test",
+  "environmentParams": "{\"users\":100}"
+}
+
+# Copy run ID vào @runId ở trên
+
+###
+# Step 4: Update Run to Processing
+PATCH {{baseUrl}}/api/runs/YOUR-RUN-ID-HERE/status
+Content-Type: application/json
+
+{
+  "status": 1
+}
+
+###
+# Step 5: Complete Run with Results
+PATCH {{baseUrl}}/api/runs/YOUR-RUN-ID-HERE/status
+Content-Type: application/json
+
+{
+  "status": 2,
+  "averageLatencyMs": 245.8,
+  "throughputRps": 420.5,
+  "successfulRequests": 25230,
+  "failedRequests": 0,
+  "errorRate": 0
+}
+
+###
+# Step 6: View All Runs for Scenario
+GET {{baseUrl}}/api/scenarios/YOUR-SCENARIO-ID-HERE/runs
+
+###############################################
+# Run Status Values:
+# 0 = Pending
+# 1 = Processing  
+# 2 = Completed
+# 3 = Failed
+# 4 = Cancelled
+###############################################

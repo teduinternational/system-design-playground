@@ -7,6 +7,8 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     : DbContext(options)
 {
     public DbSet<Diagram> Diagrams => Set<Diagram>();
+    public DbSet<Scenario> Scenarios => Set<Scenario>();
+    public DbSet<Run> Runs => Set<Run>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
