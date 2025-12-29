@@ -65,7 +65,15 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center gap-3">
         {isEditor && (
           <button 
-            onClick={onToggleSimulate}
+            onClick={() => {
+              // Call simulation handler exposed by EditorPage
+              if ((window as any).__handleSimulate) {
+                (window as any).__handleSimulate();
+              } else {
+                // Fallback to simple toggle
+                onToggleSimulate();
+              }
+            }}
             className={`
               h-8 px-4 rounded text-xs font-bold uppercase tracking-wide flex items-center gap-1.5 mr-2 transition-all
               ${isSimulating 

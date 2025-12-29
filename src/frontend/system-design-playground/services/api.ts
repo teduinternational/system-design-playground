@@ -63,3 +63,5 @@ export type {
 // Re-export services
 export { diagramApi } from './diagram.service';
 export { scenarioApi } from './scenario.service';
+export { simulationApi } from './simulation.service';
+export { runApi } from './run.service';

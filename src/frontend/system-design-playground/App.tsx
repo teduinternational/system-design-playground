@@ -21,7 +21,7 @@ const App: React.FC = () => {
       <div className="flex flex-col h-screen overflow-hidden bg-background text-white font-sans">
         <Header 
           isSimulating={isSimulating}
-          onToggleSimulate={() => setIsSimulating(!isSimulating)}
+          onToggleSimulate={() => setIsSimulating(prev => !prev)}
           onExportPng={exportHandlers.onExportPng}
           onExportJson={exportHandlers.onExportJson}
           onSave={exportHandlers.onSave}
@@ -36,6 +36,7 @@ const App: React.FC = () => {
             element={
               <EditorPage 
                 isSimulating={isSimulating}
+                setIsSimulating={setIsSimulating}
                 setExportHandlers={setExportHandlers}
               />
             } 

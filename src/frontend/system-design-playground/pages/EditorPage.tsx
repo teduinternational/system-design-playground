@@ -7,16 +7,20 @@ import { MetricsPanel } from '../components/MetricsPanel';
 import { VersionHistory } from '../components/VersionHistory';
 import { SaveDiagramModal } from '../components/SaveDiagramModal';
 import { SaveVersionModal } from '../components/SaveVersionModal';
+import { SimulationResultModal } from '../components/SimulationResultModal';
 import { toast } from '../components/Toast';
 import { useDiagramStore } from '../stores/useDiagramStore';
 import { useDiagramPersistence } from '../hooks/useDiagramPersistence';
 import { useApiDiagramPersistence } from '../hooks/useApiDiagramPersistence';
+import { useSimulation } from '../hooks/useSimulation';
 import { scenarioApi } from '../services/api';
 import { exportCanvasToPng } from '../utils/exportCanvas';
+import type { SimulationRequest, SimulationNode, SimulationEdge } from '../services/types/simulation.types';
 import sampleDiagram from '../mock-data/sample-diagram.json';
 
 interface EditorPageProps {
   isSimulating: boolean;
+  setIsSimulating: React.Dispatch<React.SetStateAction<boolean>>;
   setExportHandlers: (handlers: {
     onExportPng?: () => void;
     onExportJson?: () => void;
@@ -27,7 +31,8 @@ interface EditorPageProps {
 }
 
 export const EditorPage: React.FC<EditorPageProps> = ({ 
-  isSimulating, 
+  isSimulating,
+  setIsSimulating, 
   setExportHandlers 
 }) => {
   const [searchParams] = useSearchParams();
@@ -35,6 +40,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showVersionModal, setShowVersionModal] = useState(false);
+  const [showResultModal, setShowResultModal] = useState(false);
   
   const nodes = useDiagramStore((state) => state.nodes);
   const edges = useDiagramStore((state) => state.edges);
@@ -57,6 +63,19 @@ export const EditorPage: React.FC<EditorPageProps> = ({
     updateDiagramOnApi,
     isLoading 
   } = useApiDiagramPersistence();
+
+  // Simulation hook
+  const { runSimulation, simulationResult } = useSimulation({
+    diagramId: diagramId || undefined,
+    onSimulationComplete: (result) => {
+      console.log('🎯 Simulation completed:', result);
+      // Show result modal (state will be stopped in handleSimulate after await)
+      setShowResultModal(true);
+    },
+    onSimulationError: (error) => {
+      console.error('❌ Simulation error:', error);
+    },
+  });
 
   // Load diagram from API if ID is provided, otherwise load sample or localStorage
   useEffect(() => {
@@ -185,6 +204,50 @@ export const EditorPage: React.FC<EditorPageProps> = ({
     setShowVersionHistory(true);
   };
 
+  // Handle simulation
+  const handleSimulate = async () => {
+    if (isSimulating) {
+      // Stop simulation
+      setIsSimulating(false);
+      return;
+    }
+
+    // Convert diagram to SimulationRequest
+    const simulationNodes: SimulationNode[] = nodes.map((node) => ({
+      id: node.id,
+      type: node.data.label || node.type || 'Unknown',
+      latencyMs: node.data.latency || 10, // Default 10ms if not specified
+      isEntryPoint: node.data.isEntryPoint || node.data.nodeCategory === 'entry',
+    }));
+
+    const simulationEdges: SimulationEdge[] = edges.map((edge) => ({
+      id: edge.id,
+      source: edge.source,
+      target: edge.target,
+      latencyMs: edge.data?.latency || 5, // Default 5ms for network latency
+    }));
+
+    const request: SimulationRequest = {
+      nodes: simulationNodes,
+      edges: simulationEdges,
+    };
+
+    try {
+      // Start visual simulation
+      setIsSimulating(true);
+      
+      // Run backend simulation and save to database
+      await runSimulation(request);
+      
+      // Stop visual simulation after completion
+      setIsSimulating(false);
+    } catch (error) {
+      console.error('Failed to run simulation:', error);
+      // Stop visual simulation on error
+      setIsSimulating(false);
+    }
+  };
+
   // Register export handlers with parent component
   useEffect(() => {
     setExportHandlers({
@@ -195,6 +258,14 @@ export const EditorPage: React.FC<EditorPageProps> = ({
       onShowVersionHistory: handleShowVersionHistory,
     });
   }, [setExportHandlers, diagramId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Expose simulation handler to parent
+  useEffect(() => {
+    (window as any).__handleSimulate = handleSimulate;
+    return () => {
+      delete (window as any).__handleSimulate;
+    };
+  }, [nodes, edges, isSimulating]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Simulation Logic Loop
   useEffect(() => {
@@ -250,6 +321,15 @@ export const EditorPage: React.FC<EditorPageProps> = ({
       />
 
       {/* Version History Modal */}
+
+      {/* Simulation Result Modal */}
+      {simulationResult && (
+        <SimulationResultModal
+          isOpen={showResultModal}
+          onClose={() => setShowResultModal(false)}
+          result={simulationResult}
+        />
+      )}
       {showVersionHistory && diagramId && (
         <VersionHistory 
           diagramId={diagramId}
