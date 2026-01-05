@@ -1,0 +1,30 @@
+### Test AI Endpoints
+
+@host = https://localhost:7001
+
+###
+# GET /api/ai/test - Test với câu hỏi mặc định
+GET {{host}}/api/ai/test
+
+###
+# GET /api/ai/test - Test với câu hỏi custom
+GET {{host}}/api/ai/test?question=What is Clean Architecture in .NET?
+
+###
+# POST /api/ai/chat - Chat với custom prompts
+POST {{host}}/api/ai/chat
+Content-Type: application/json
+
+{
+  "userPrompt": "Explain the benefits of using Primary Constructors in C# 14",
+  "systemPrompt": "You are a C# expert. Give short, practical answers."
+}
+
+###
+# POST /api/ai/chat - Chat về Minimal API
+POST {{host}}/api/ai/chat
+Content-Type: application/json
+
+{
+  "userPrompt": "Why should I use Minimal API instead of Controllers in .NET 10?"
+}

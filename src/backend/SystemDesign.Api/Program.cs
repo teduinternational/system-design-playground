@@ -1,5 +1,6 @@
 using SystemDesign.Api.Endpoints;
 using SystemDesign.Application;
+using SystemDesign.Infrastructure;
 using SystemDesign.Infrastructure.Persistence;
 using Scalar.AspNetCore;
 
@@ -7,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddApplication();
+builder.Services.AddInfrastructure();
 builder.Services.AddPersistence(builder.Configuration);
 
 // Cấu hình OpenAPI (Swagger) cho .NET 10
@@ -44,5 +46,6 @@ app.MapDiagramEndpoints();
 app.MapScenarioEndpoints();
 app.MapRunEndpoints();
 app.MapSimulationEndpoints();
+app.MapAIEndpoints();
 
 app.Run();
