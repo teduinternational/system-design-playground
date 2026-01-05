@@ -179,6 +179,28 @@ const PropertiesPanelComponent: React.FC = () => {
             </div>
 
             <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-400">Jitter (ms)</label>
+              <input 
+                className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" 
+                type="number" 
+                value={simulation.jitterMs || 0}
+                onChange={(e) => handleSimulationChange('jitterMs', parseFloat(e.target.value))}
+              />
+              <p className="text-[10px] text-gray-500">Random latency variation (0-jitter ms)</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-400">Capacity (req/s)</label>
+              <input 
+                className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" 
+                type="number" 
+                value={simulation.capacity || 0}
+                onChange={(e) => handleSimulationChange('capacity', parseFloat(e.target.value))}
+              />
+              <p className="text-[10px] text-gray-500">Max requests/second (causes queuing delay when exceeded)</p>
+            </div>
+
+            <div className="space-y-2">
               <label className="text-xs font-medium text-gray-400">Failure Rate (0.0 - 1.0)</label>
               <input 
                 className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" 

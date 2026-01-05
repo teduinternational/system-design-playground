@@ -65,10 +65,15 @@ export const EditorPage: React.FC<EditorPageProps> = ({
   } = useApiDiagramPersistence();
 
   // Simulation hook
-  const { runSimulation, simulationResult } = useSimulation({
+  const { runSimulation, simulationResult, percentileResult } = useSimulation({
     diagramId: diagramId || undefined,
-    onSimulationComplete: (result) => {
+    onSimulationComplete: (result, percentile) => {
       console.log('🎯 Simulation completed:', result);
+      if (percentile) {
+        console.log('📊 Percentile results:', percentile);
+      } else {
+        console.warn('⚠️ No percentile results returned');
+      }
       // Show result modal (state will be stopped in handleSimulate after await)
       setShowResultModal(true);
     },
@@ -76,6 +81,11 @@ export const EditorPage: React.FC<EditorPageProps> = ({
       console.error('❌ Simulation error:', error);
     },
   });
+
+  // Debug: Log percentileResult changes
+  useEffect(() => {
+    console.log('🔄 percentileResult state changed:', percentileResult);
+  }, [percentileResult]);
 
   // Load diagram from API if ID is provided, otherwise load sample or localStorage
   useEffect(() => {
@@ -216,21 +226,37 @@ export const EditorPage: React.FC<EditorPageProps> = ({
     const simulationNodes: SimulationNode[] = nodes.map((node) => ({
       id: node.id,
       type: node.data.label || node.type || 'Unknown',
-      latencyMs: node.data.latency || 10, // Default 10ms if not specified
+      latencyMs: node.data.latency || node.data.simulation?.processingTimeMs || 10,
+      jitterMs: node.data.jitterMs || node.data.simulation?.jitterMs || 0,
+      capacity: node.data.capacity || node.data.simulation?.capacity,
       isEntryPoint: node.data.isEntryPoint || node.data.nodeCategory === 'entry',
     }));
+
+    console.log('🔍 All simulation nodes:', simulationNodes);
+    console.log('🎯 Entry nodes:', simulationNodes.filter(n => n.isEntryPoint));
+
+    // Fallback: If no entry point, mark the first node as entry
+    const hasEntryPoint = simulationNodes.some(n => n.isEntryPoint);
+    if (!hasEntryPoint && simulationNodes.length > 0) {
+      console.warn('⚠️ No entry point found, marking first node as entry');
+      simulationNodes[0].isEntryPoint = true;
+    }
 
     const simulationEdges: SimulationEdge[] = edges.map((edge) => ({
       id: edge.id,
       source: edge.source,
       target: edge.target,
-      latencyMs: edge.data?.latency || 5, // Default 5ms for network latency
+      latencyMs: edge.data?.latency || 5,
+      jitterMs: edge.data?.jitterMs || 0,
     }));
 
     const request: SimulationRequest = {
       nodes: simulationNodes,
       edges: simulationEdges,
+      concurrentRequests: 100, // Default concurrent requests để simulate load
     };
+
+    console.log('📦 Full simulation request:', request);
 
     try {
       // Start visual simulation
@@ -326,8 +352,12 @@ export const EditorPage: React.FC<EditorPageProps> = ({
       {simulationResult && (
         <SimulationResultModal
           isOpen={showResultModal}
-          onClose={() => setShowResultModal(false)}
+          onClose={() => {
+            console.log('🔴 Closing modal');
+            setShowResultModal(false);
+          }}
           result={simulationResult}
+          percentileResult={percentileResult || undefined}
         />
       )}
       {showVersionHistory && diagramId && (

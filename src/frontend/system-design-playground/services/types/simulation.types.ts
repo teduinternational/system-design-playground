@@ -6,6 +6,8 @@ export interface SimulationNode {
   id: string;
   type: string;
   latencyMs: number;
+  jitterMs?: number;
+  capacity?: number;
   isEntryPoint?: boolean;
 }
 
@@ -14,11 +16,13 @@ export interface SimulationEdge {
   source: string;
   target: string;
   latencyMs: number;
+  jitterMs?: number;
 }
 
 export interface SimulationRequest {
   nodes: SimulationNode[];
   edges: SimulationEdge[];
+  concurrentRequests?: number;
 }
 
 export interface SimulationResult {
@@ -33,6 +37,25 @@ export interface SimulationResult {
 export interface LongestPathsResponse {
   totalPaths: number;
   paths: SimulationResult[];
+}
+
+export interface NodeQueueingInfo {
+  nodeId: string;
+  capacity: number;
+  actualLoad: number;
+  avgQueueingDelayMs: number;
+  loadFactor: number;
+}
+
+export interface PercentileSimulationResult {
+  entryNodeId: string;
+  simulationCount: number;
+  p50LatencyMs: number;
+  p95LatencyMs: number;
+  minLatencyMs: number;
+  maxLatencyMs: number;
+  avgLatencyMs: number;
+  overloadedNodes?: NodeQueueingInfo[];
 }
 
 export interface AnalyzeResponse {

@@ -5,13 +5,14 @@ import { RunStatus } from '../services/types/run-status.types';
 import type { 
   SimulationRequest, 
   AnalyzeResponse,
-  CreateRunDto 
+  CreateRunDto,
+  PercentileSimulationResult
 } from '../services/types/simulation.types';
 
 interface UseSimulationOptions {
   diagramId?: string;
   onSimulationStart?: () => void;
-  onSimulationComplete?: (result: AnalyzeResponse) => void;
+  onSimulationComplete?: (result: AnalyzeResponse, percentileResult?: PercentileSimulationResult) => void;
   onSimulationError?: (error: Error) => void;
 }
 
@@ -22,6 +23,7 @@ interface UseSimulationOptions {
 export function useSimulation(options: UseSimulationOptions = {}) {
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationResult, setSimulationResult] = useState<AnalyzeResponse | null>(null);
+  const [percentileResult, setPercentileResult] = useState<PercentileSimulationResult | null>(null);
   const [currentRunId, setCurrentRunId] = useState<string | null>(null);
 
   /**
@@ -37,6 +39,28 @@ export function useSimulation(options: UseSimulationOptions = {}) {
       const analysisResult = await simulationApi.analyze(request);
       
       setSimulationResult(analysisResult);
+      
+      // Step 1.5: Run percentile simulation if entry point exists
+      let percentileSimResult: PercentileSimulationResult | undefined;
+      
+      // Find first entry point for percentile simulation
+      const entryNode = request.nodes.find(n => n.isEntryPoint);
+      console.log('🔍 Entry node found:', entryNode);
+      
+      if (entryNode) {
+        try {
+          console.log('📊 Calling percentile simulation for node:', entryNode.id);
+          toast.info('Running percentile analysis with 1000 simulations...');
+          percentileSimResult = await simulationApi.simulateWithPercentiles(entryNode.id, request);
+          console.log('✅ Percentile simulation result:', percentileSimResult);
+          setPercentileResult(percentileSimResult);
+        } catch (error) {
+          console.warn('⚠️ Failed to run percentile simulation:', error);
+          // Continue without percentile results
+        }
+      } else {
+        console.warn('⚠️ No entry node found for percentile simulation');
+      }
       
       // Step 2: Get or create a scenario for this diagram
       let scenarioId: string | undefined;
@@ -95,7 +119,7 @@ export function useSimulation(options: UseSimulationOptions = {}) {
         toast.success('Analysis completed!');
       }
       
-      options.onSimulationComplete?.(analysisResult);
+      options.onSimulationComplete?.(analysisResult, percentileSimResult);
       
       return analysisResult;
     } catch (error) {
@@ -137,6 +161,7 @@ export function useSimulation(options: UseSimulationOptions = {}) {
   return {
     isSimulating,
     simulationResult,
+    percentileResult,
     currentRunId,
     runSimulation,
     getRunHistory,

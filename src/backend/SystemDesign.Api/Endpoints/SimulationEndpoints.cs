@@ -114,6 +114,37 @@ public static class SimulationEndpoints
         .WithName("AnalyzeSystemPerformance")
         .WithSummary("Phân tích chi tiết performance của system architecture");
 
+        // POST /api/simulation/percentiles/{nodeId} - Chạy 1000 simulations với jitter và queuing delay
+        group.MapPost("/percentiles/{nodeId}", async (
+            string nodeId,
+            SimulationRequest request,
+            ISimulationEngine simulationEngine,
+            CancellationToken ct) =>
+        {
+            var result = await simulationEngine.SimulateWithPercentilesAsync(request, nodeId, ct);
+            
+            return Results.Ok(new
+            {
+                entryNodeId = result.EntryNodeId,
+                simulationCount = result.SimulationCount,
+                p50LatencyMs = result.P50LatencyMs,
+                p95LatencyMs = result.P95LatencyMs,
+                minLatencyMs = result.MinLatencyMs,
+                maxLatencyMs = result.MaxLatencyMs,
+                avgLatencyMs = result.AvgLatencyMs,
+                overloadedNodes = result.OverloadedNodes?.Select(n => new
+                {
+                    nodeId = n.NodeId,
+                    capacity = n.Capacity,
+                    actualLoad = n.ActualLoad,
+                    avgQueueingDelayMs = n.AvgQueueingDelayMs,
+                    loadFactor = n.LoadFactor
+                })
+            });
+        })
+        .WithName("SimulateWithPercentiles")
+        .WithSummary("Chạy 1000 simulations với random jitter và queuing delay, tính toán P50, P95");
+
         return app;
     }
 }

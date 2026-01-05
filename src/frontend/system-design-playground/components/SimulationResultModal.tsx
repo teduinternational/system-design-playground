@@ -1,19 +1,23 @@
 import React from 'react';
-import { X, TrendingUp, Zap, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
-import type { AnalyzeResponse } from '../services/types/simulation.types';
+import { X, TrendingUp, Zap, AlertCircle, CheckCircle2, Clock, Activity, AlertTriangle } from 'lucide-react';
+import type { AnalyzeResponse, PercentileSimulationResult } from '../services/types/simulation.types';
 
 interface SimulationResultModalProps {
   isOpen: boolean;
   onClose: () => void;
   result: AnalyzeResponse;
+  percentileResult?: PercentileSimulationResult;
 }
 
 export const SimulationResultModal: React.FC<SimulationResultModalProps> = ({
   isOpen,
   onClose,
   result,
+  percentileResult,
 }) => {
   if (!isOpen) return null;
+
+  console.log('🎯 SimulationResultModal - percentileResult:', percentileResult);
 
   const { systemOverview, criticalPath, statistics, allPaths } = result;
 
@@ -214,6 +218,123 @@ export const SimulationResultModal: React.FC<SimulationResultModalProps> = ({
               </table>
             </div>
           </div>
+
+          {/* Percentile Analysis (if available) */}
+          {percentileResult && (
+            <>
+              <div className="border-t-2 border-border pt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Activity className="w-5 h-5 text-purple-500" />
+                  <h3 className="font-bold text-white text-lg">Percentile Analysis</h3>
+                  <span className="text-xs text-secondary bg-purple-500/10 px-2 py-1 rounded">
+                    {percentileResult.simulationCount} simulations
+                  </span>
+                </div>
+
+                {/* Percentile Stats */}
+                <div className="grid grid-cols-5 gap-4 mb-4">
+                  <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 rounded-lg p-4 border border-green-500/20">
+                    <div className="text-green-500 text-xs mb-1 font-semibold">Min</div>
+                    <div className="text-2xl font-bold text-white">
+                      {percentileResult.minLatencyMs.toFixed(2)}
+                      <span className="text-xs text-secondary ml-1">ms</span>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 rounded-lg p-4 border border-blue-500/20">
+                    <div className="text-blue-500 text-xs mb-1 font-semibold">P50 (Median)</div>
+                    <div className="text-2xl font-bold text-white">
+                      {percentileResult.p50LatencyMs.toFixed(2)}
+                      <span className="text-xs text-secondary ml-1">ms</span>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 rounded-lg p-4 border border-yellow-500/20">
+                    <div className="text-yellow-500 text-xs mb-1 font-semibold">Average</div>
+                    <div className="text-2xl font-bold text-white">
+                      {percentileResult.avgLatencyMs.toFixed(2)}
+                      <span className="text-xs text-secondary ml-1">ms</span>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 rounded-lg p-4 border border-orange-500/20">
+                    <div className="text-orange-500 text-xs mb-1 font-semibold">P95</div>
+                    <div className="text-2xl font-bold text-white">
+                      {percentileResult.p95LatencyMs.toFixed(2)}
+                      <span className="text-xs text-secondary ml-1">ms</span>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-red-500/10 to-red-600/5 rounded-lg p-4 border border-red-500/20">
+                    <div className="text-red-500 text-xs mb-1 font-semibold">Max</div>
+                    <div className="text-2xl font-bold text-white">
+                      {percentileResult.maxLatencyMs.toFixed(2)}
+                      <span className="text-xs text-secondary ml-1">ms</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Overloaded Nodes Warning */}
+                {percentileResult.overloadedNodes && percentileResult.overloadedNodes.length > 0 && (
+                  <div className="bg-gradient-to-br from-red-500/10 to-orange-500/10 rounded-lg p-5 border border-red-500/30">
+                    <div className="flex items-center gap-2 mb-4">
+                      <AlertTriangle className="w-5 h-5 text-red-500" />
+                      <h4 className="font-bold text-white">Overloaded Nodes Detected</h4>
+                      <span className="text-xs bg-red-500/20 text-red-500 px-2 py-1 rounded">
+                        {percentileResult.overloadedNodes.length} node(s)
+                      </span>
+                    </div>
+                    <div className="space-y-3">
+                      {percentileResult.overloadedNodes.map((node) => (
+                        <div
+                          key={node.nodeId}
+                          className="bg-surface/50 rounded-lg p-4 border border-red-500/20"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <div className="text-white font-semibold mb-1">{node.nodeId}</div>
+                              <div className="text-xs text-secondary">
+                                Capacity: {node.capacity.toFixed(0)} req/s
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-red-500 font-bold text-lg">
+                                {(node.loadFactor * 100).toFixed(0)}%
+                              </div>
+                              <div className="text-xs text-secondary">Load Factor</div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                              <div className="text-secondary text-xs">Actual Load</div>
+                              <div className="text-white font-medium">
+                                {node.actualLoad.toFixed(2)} req/s
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-secondary text-xs">Avg Queuing Delay</div>
+                              <div className="text-orange-500 font-bold">
+                                +{node.avgQueueingDelayMs.toFixed(2)} ms
+                              </div>
+                            </div>
+                          </div>
+                          {/* Load Bar */}
+                          <div className="mt-3">
+                            <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 transition-all"
+                                style={{ width: `${Math.min(node.loadFactor * 100, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 text-xs text-secondary bg-surface/50 p-3 rounded border border-border">
+                      <strong className="text-orange-500">⚠️ Impact:</strong> Overloaded nodes cause exponential queuing delays, 
+                      affecting all downstream services in the path.
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Footer */}

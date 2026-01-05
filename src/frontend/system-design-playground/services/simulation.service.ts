@@ -3,7 +3,8 @@ import type {
   SimulationRequest, 
   LongestPathsResponse, 
   SimulationResult,
-  AnalyzeResponse 
+  AnalyzeResponse,
+  PercentileSimulationResult
 } from './types/simulation.types';
 
 /**
@@ -36,6 +37,16 @@ export const simulationApi = {
    */
   analyze: async (request: SimulationRequest): Promise<AnalyzeResponse> => {
     return fetchAPI<AnalyzeResponse>('/api/simulation/analyze', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  },
+
+  /**
+   * Run percentile simulation with jitter and queuing delay (1000 iterations)
+   */
+  simulateWithPercentiles: async (nodeId: string, request: SimulationRequest): Promise<PercentileSimulationResult> => {
+    return fetchAPI<PercentileSimulationResult>(`/api/simulation/percentiles/${nodeId}`, {
       method: 'POST',
       body: JSON.stringify(request),
     });
