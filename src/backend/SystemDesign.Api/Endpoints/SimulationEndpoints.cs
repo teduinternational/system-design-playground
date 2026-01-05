@@ -139,11 +139,20 @@ public static class SimulationEndpoints
                     actualLoad = n.ActualLoad,
                     avgQueueingDelayMs = n.AvgQueueingDelayMs,
                     loadFactor = n.LoadFactor
+                }),
+                bottlenecks = result.Bottlenecks?.Select(b => new
+                {
+                    nodeId = b.NodeId,
+                    reason = b.Reason,
+                    utilization = b.Utilization,
+                    capacity = b.Capacity,
+                    currentLoad = b.CurrentLoad,
+                    severity = b.Severity
                 })
             });
         })
         .WithName("SimulateWithPercentiles")
-        .WithSummary("Chạy 1000 simulations với random jitter và queuing delay, tính toán P50, P95");
+        .WithSummary("Chạy 1000 simulations với random jitter và queuing delay, tính toán P50, P95 và phát hiện bottlenecks");
 
         return app;
     }

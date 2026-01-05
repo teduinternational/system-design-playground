@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, TrendingUp, Zap, AlertCircle, CheckCircle2, Clock, Activity, AlertTriangle } from 'lucide-react';
+import { X, TrendingUp, Zap, AlertCircle, CheckCircle2, Clock, Activity, AlertTriangle, XOctagon } from 'lucide-react';
 import type { AnalyzeResponse, PercentileSimulationResult } from '../services/types/simulation.types';
 
 interface SimulationResultModalProps {
@@ -329,6 +329,98 @@ export const SimulationResultModal: React.FC<SimulationResultModalProps> = ({
                     <div className="mt-4 text-xs text-secondary bg-surface/50 p-3 rounded border border-border">
                       <strong className="text-orange-500">⚠️ Impact:</strong> Overloaded nodes cause exponential queuing delays, 
                       affecting all downstream services in the path.
+                    </div>
+                  </div>
+                )}
+
+                {/* Bottleneck Analysis */}
+                {percentileResult.bottlenecks && percentileResult.bottlenecks.length > 0 && (
+                  <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg p-5 border border-purple-500/30 mt-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <XOctagon className="w-5 h-5 text-purple-500" />
+                      <h4 className="font-bold text-white">Bottleneck Analysis</h4>
+                      <span className="text-xs bg-purple-500/20 text-purple-500 px-2 py-1 rounded">
+                        {percentileResult.bottlenecks.length} bottleneck(s) detected
+                      </span>
+                    </div>
+                    <div className="space-y-3">
+                      {percentileResult.bottlenecks.map((bottleneck) => {
+                        const severityColors = {
+                          Critical: 'border-red-600/40 bg-red-500/10',
+                          High: 'border-orange-500/40 bg-orange-500/10',
+                          Medium: 'border-yellow-500/40 bg-yellow-500/10',
+                        };
+                        const severityTextColors = {
+                          Critical: 'text-red-500',
+                          High: 'text-orange-500',
+                          Medium: 'text-yellow-500',
+                        };
+                        const severityBadgeColors = {
+                          Critical: 'bg-red-500/20 text-red-500',
+                          High: 'bg-orange-500/20 text-orange-500',
+                          Medium: 'bg-yellow-500/20 text-yellow-500',
+                        };
+
+                        return (
+                          <div
+                            key={bottleneck.nodeId}
+                            className={`rounded-lg p-4 border ${severityColors[bottleneck.severity]}`}
+                          >
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <div className="text-white font-semibold">{bottleneck.nodeId}</div>
+                                  <span className={`text-xs px-2 py-0.5 rounded font-medium ${severityBadgeColors[bottleneck.severity]}`}>
+                                    {bottleneck.severity}
+                                  </span>
+                                </div>
+                                <div className="text-sm text-secondary mb-2">
+                                  {bottleneck.reason}
+                                </div>
+                              </div>
+                              <div className="text-right ml-4">
+                                <div className={`font-bold text-2xl ${severityTextColors[bottleneck.severity]}`}>
+                                  {(bottleneck.utilization * 100).toFixed(0)}%
+                                </div>
+                                <div className="text-xs text-secondary">Utilization</div>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                              <div>
+                                <div className="text-secondary text-xs">Capacity</div>
+                                <div className="text-white font-medium">
+                                  {bottleneck.capacity.toFixed(0)} req/s
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-secondary text-xs">Current Load</div>
+                                <div className={`font-bold ${severityTextColors[bottleneck.severity]}`}>
+                                  {bottleneck.currentLoad.toFixed(2)} req/s
+                                </div>
+                              </div>
+                            </div>
+                            {/* Utilization Bar */}
+                            <div className="mt-3">
+                              <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full transition-all ${
+                                    bottleneck.severity === 'Critical'
+                                      ? 'bg-gradient-to-r from-red-600 to-red-500'
+                                      : bottleneck.severity === 'High'
+                                      ? 'bg-gradient-to-r from-orange-600 to-orange-500'
+                                      : 'bg-gradient-to-r from-yellow-600 to-yellow-500'
+                                  }`}
+                                  style={{ width: `${Math.min(bottleneck.utilization * 100, 100)}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-4 text-xs text-secondary bg-surface/50 p-3 rounded border border-border">
+                      <strong className="text-purple-500">💡 Recommendation:</strong> Bottlenecks limit the entire system's throughput. 
+                      Priority should be given to scaling Critical bottlenecks first, then High severity ones.
                     </div>
                   </div>
                 )}

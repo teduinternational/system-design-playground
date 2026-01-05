@@ -47,6 +47,15 @@ export interface NodeQueueingInfo {
   loadFactor: number;
 }
 
+export interface BottleneckInfo {
+  nodeId: string;
+  reason: string;
+  utilization: number;
+  capacity: number;
+  currentLoad: number;
+  severity: 'Critical' | 'High' | 'Medium';
+}
+
 export interface PercentileSimulationResult {
   entryNodeId: string;
   simulationCount: number;
@@ -56,6 +65,7 @@ export interface PercentileSimulationResult {
   maxLatencyMs: number;
   avgLatencyMs: number;
   overloadedNodes?: NodeQueueingInfo[];
+  bottlenecks?: BottleneckInfo[];
 }
 
 export interface AnalyzeResponse {

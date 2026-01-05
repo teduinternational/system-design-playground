@@ -101,6 +101,9 @@ public sealed class SimulationEngine : ISimulationEngine
         // Tính toán overloaded nodes
         var overloadedNodes = CalculateOverloadedNodes(request, nodeLoadCounter, nodeQueueingDelays, SimulationCount);
 
+        // Phân tích bottlenecks (điểm nghẽn)
+        var bottlenecks = AnalyzeBottlenecks(request, nodeLoadCounter, SimulationCount);
+
         var result = new PercentileSimulationResult
         {
             EntryNodeId = startNodeId,
@@ -110,7 +113,8 @@ public sealed class SimulationEngine : ISimulationEngine
             MinLatencyMs = latencies.Count > 0 ? latencies[0] : 0,
             MaxLatencyMs = latencies.Count > 0 ? latencies[^1] : 0,
             AvgLatencyMs = latencies.Count > 0 ? latencies.Average() : 0,
-            OverloadedNodes = overloadedNodes
+            OverloadedNodes = overloadedNodes,
+            Bottlenecks = bottlenecks
         };
 
         return Task.FromResult(result);
@@ -487,6 +491,67 @@ public sealed class SimulationEngine : ISimulationEngine
         }
 
         return overloadedNodes.Count > 0 ? overloadedNodes : null;
+    }
+
+    /// <summary>
+    /// Phân tích bottlenecks (điểm nghẽn) trong hệ thống
+    /// Bottleneck là node có utilization cao (>80%) có thể gây nghẽn cho toàn bộ flow
+    /// </summary>
+    private List<BottleneckInfo>? AnalyzeBottlenecks(
+        SimulationRequest request,
+        Dictionary<string, int> nodeLoadCounter,
+        int totalSimulations)
+    {
+        var bottlenecks = new List<BottleneckInfo>();
+
+        foreach (var node in request.Nodes.Where(n => n.Capacity.HasValue && n.Capacity > 0))
+        {
+            var actualLoad = nodeLoadCounter.GetValueOrDefault(node.Id, 0);
+            var capacity = node.Capacity!.Value;
+            
+            // Tính utilization: số requests thực tế / capacity
+            // Chia cho totalSimulations để chuẩn hóa về tỷ lệ per simulation
+            var currentLoad = (double)actualLoad / totalSimulations;
+            var utilization = currentLoad / capacity;
+
+            // Phân loại severity dựa trên utilization
+            string? severity = null;
+            string? reason = null;
+
+            if (utilization >= 0.95)
+            {
+                severity = "Critical";
+                reason = $"Node đang chạy ở mức {utilization:P0} capacity. Đây là bottleneck nghiêm trọng - cần scale up NGAY hoặc thêm instances để tránh hệ thống sập.";
+            }
+            else if (utilization >= 0.90)
+            {
+                severity = "High";
+                reason = $"Node đang chạm ngưỡng giới hạn ({utilization:P0} capacity). Cần tăng thêm Instances hoặc scale-up để tránh bottleneck.";
+            }
+            else if (utilization >= 0.80)
+            {
+                severity = "Medium";
+                reason = $"Node đang chạy ở mức {utilization:P0} capacity. Nên cân nhắc scale up để đảm bảo performance ổn định.";
+            }
+
+            if (severity != null && reason != null)
+            {
+                bottlenecks.Add(new BottleneckInfo
+                {
+                    NodeId = node.Id,
+                    Reason = reason,
+                    Utilization = utilization,
+                    Capacity = capacity,
+                    CurrentLoad = currentLoad,
+                    Severity = severity
+                });
+            }
+        }
+
+        // Sắp xếp theo utilization giảm dần (bottleneck nghiêm trọng nhất lên đầu)
+        bottlenecks = bottlenecks.OrderByDescending(b => b.Utilization).ToList();
+
+        return bottlenecks.Count > 0 ? bottlenecks : null;
     }
 
     /// <summary>

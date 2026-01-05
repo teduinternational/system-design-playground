@@ -70,6 +70,10 @@ public sealed record PercentileSimulationResult
     /// Thông tin về các nodes bị overload và queuing delay
     /// </summary>
     public List<NodeQueueingInfo>? OverloadedNodes { get; init; }
+    /// <summary>
+    /// Danh sách các bottlenecks (điểm nghẽn) trong hệ thống
+    /// </summary>
+    public List<BottleneckInfo>? Bottlenecks { get; init; }
 }
 
 /// <summary>
@@ -82,4 +86,17 @@ public sealed record NodeQueueingInfo
     public required double ActualLoad { get; init; }
     public required double AvgQueueingDelayMs { get; init; }
     public required double LoadFactor { get; init; } // ActualLoad / Capacity
+}
+
+/// <summary>
+/// Thông tin về bottleneck (điểm nghẽn) trong hệ thống
+/// </summary>
+public sealed record BottleneckInfo
+{
+    public required string NodeId { get; init; }
+    public required string Reason { get; init; }
+    public required double Utilization { get; init; }
+    public required double Capacity { get; init; }
+    public required double CurrentLoad { get; init; }
+    public required string Severity { get; init; } // "Critical" (>95%), "High" (>90%), "Medium" (>80%)
 }
