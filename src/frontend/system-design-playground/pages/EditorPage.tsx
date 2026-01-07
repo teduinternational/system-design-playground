@@ -8,6 +8,7 @@ import { VersionHistory } from '../components/VersionHistory';
 import { SaveDiagramModal } from '../components/SaveDiagramModal';
 import { SaveVersionModal } from '../components/SaveVersionModal';
 import { SimulationResultModal } from '../components/SimulationResultModal';
+import { AIAnalysisModal } from '../components/AIAnalysisModal';
 import { toast } from '../components/Toast';
 import { useDiagramStore } from '../stores/useDiagramStore';
 import { useDiagramPersistence } from '../hooks/useDiagramPersistence';
@@ -41,6 +42,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showVersionModal, setShowVersionModal] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
   
   const nodes = useDiagramStore((state) => state.nodes);
   const edges = useDiagramStore((state) => state.edges);
@@ -329,6 +331,29 @@ export const EditorPage: React.FC<EditorPageProps> = ({
         </div>
         <PropertiesPanel /> 
       </div>
+
+      {/* Floating AI Analysis Button */}
+      <button
+        onClick={() => setShowAIModal(true)}
+        disabled={nodes.length === 0}
+        className="fixed bottom-8 right-8 z-40 inline-flex items-center gap-2 px-6 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-full shadow-lg hover:shadow-xl hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 active:scale-95"
+        title="AI Architecture Analysis"
+      >
+        <svg
+          className="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+          />
+        </svg>
+        <span className="font-bold">AI Analysis</span>
+      </button>
       
       {/* Save Diagram Modal */}
       <SaveDiagramModal
@@ -366,6 +391,12 @@ export const EditorPage: React.FC<EditorPageProps> = ({
           onClose={() => setShowVersionHistory(false)}
         />
       )}
+
+      {/* AI Analysis Modal */}
+      <AIAnalysisModal
+        isOpen={showAIModal}
+        onClose={() => setShowAIModal(false)}
+      />
     </>
   );
 };

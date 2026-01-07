@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using SystemDesign.Api.Endpoints;
 using SystemDesign.Application;
 using SystemDesign.Infrastructure;
@@ -10,6 +11,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure();
 builder.Services.AddPersistence(builder.Configuration);
+
+// Cấu hình JSON Serialization cho Enum
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 // Cấu hình OpenAPI (Swagger) cho .NET 10
 builder.Services.AddOpenApi();
