@@ -2,52 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { Edge, Node } from 'reactflow';
 import { NodeSpecs, SimulationProps, SystemEdge, SystemNode } from '@/diagram.schema';
-
-/**
- * Serialized Diagram Format - Clean JSON without React Flow internals
- */
-export interface SerializedDiagram {
-  metadata: {
-    id: string;
-    name: string;
-    description: string;
-    createdAt: string;
-    updatedAt: string;
-    version: number;
-    createdBy: string;
-    tags: string[];
-  };
-  nodes: Array<{
-    id: string;
-    type: string;
-    position: { x: number; y: number };
-    data: {
-      category: string;
-      technologies?: string[];
-      props?: Record<string, any>;
-      simulation?: {
-        processingTimeMs: number;
-        failureRate: number;
-        queueSize?: number;
-        currentLoad?: number;
-      };
-      iconName?: string;
-      status?: string;
-    };
-  }>;
-  edges: Array<{
-    id: string;
-    source: string;
-    target: string;
-    type?: string;
-    data?: {
-      protocol?: string;
-      auth?: string;
-      trafficWeight?: number;
-      networkLatency?: number;
-    };
-  }>;
-}
+import type { DiagramContent, NodeModel, EdgeModel } from '@/services/types/diagram.types';
 
 /**
  * Diagram Store State Interface
@@ -72,9 +27,9 @@ interface DiagramState {
   selectNode: (nodeId: string | null) => void;
   clearDiagram: () => void;
 
-  // Serialization
-  serializeDiagram: () => SerializedDiagram;
-  loadDiagram: (diagram: SerializedDiagram) => void;
+  // Serialization - Dùng DiagramContent thay vì SerializedDiagram
+  serializeDiagram: () => DiagramContent;
+  loadDiagram: (diagram: DiagramContent) => void;
 
   // React Flow Handlers
   onNodesChange: (changes: any) => void;
@@ -210,32 +165,33 @@ export const useDiagramStore = create<DiagramState>()(
           selectedNodeId: null,
         }),
 
-      // Serialize diagram to clean JSON format
+      // Serialize diagram to DiagramContent format (khớp với C# backend)
       serializeDiagram: () => {
         const state = get();
         
-        // Clean nodes - remove React Flow internals
-        const cleanNodes = state.nodes.map((node) => ({
+        // Convert SystemNode[] to NodeModel[]
+        const nodes: NodeModel[] = state.nodes.map((node) => ({
           id: node.id,
           type: node.type,
           position: { x: node.position.x, y: node.position.y },
-          data: {
-            category: node.data.category,
+          metadata: {
+            label: node.id, // Default label = node ID
+            category: node.data.category.toString(),
+            specs: {
+              latencyBase: 10.0, // Default values
+              maxThroughput: 1000,
+              reliability: 0.99,
+            },
             technologies: node.data.technologies,
             props: node.data.props,
-            simulation: node.data.simulation ? {
-              processingTimeMs: node.data.simulation.processingTimeMs,
-              failureRate: node.data.simulation.failureRate,
-              queueSize: node.data.simulation.queueSize,
-              currentLoad: node.data.simulation.currentLoad,
-            } : undefined,
+            simulation: node.data.simulation,
             iconName: node.data.iconName,
             status: node.data.status,
           },
         }));
 
-        // Clean edges - remove React Flow internals
-        const cleanEdges = state.edges.map((edge) => ({
+        // Convert SystemEdge[] to EdgeModel[]
+        const edges: EdgeModel[] = state.edges.map((edge) => ({
           id: edge.id,
           source: edge.source,
           target: edge.target,
@@ -243,8 +199,8 @@ export const useDiagramStore = create<DiagramState>()(
           data: edge.data,
         }));
 
-        // Generate metadata
-        const diagram: SerializedDiagram = {
+        // Generate DiagramContent
+        const diagram: DiagramContent = {
           metadata: {
             id: `diagram_${Date.now()}`,
             name: 'Untitled Diagram',
@@ -255,29 +211,31 @@ export const useDiagramStore = create<DiagramState>()(
             createdBy: 'User',
             tags: [],
           },
-          nodes: cleanNodes,
-          edges: cleanEdges,
+          nodes,
+          edges,
         };
 
         return diagram;
       },
 
-      // Load diagram from serialized format
-      loadDiagram: (diagram: SerializedDiagram) => {
+      // Load diagram from DiagramContent format
+      loadDiagram: (diagram: DiagramContent) => {
+        // Convert NodeModel[] to SystemNode[]
         const nodes = diagram.nodes.map((node) => ({
           id: node.id,
           type: node.type || 'custom',
-          position: node.position,
+          position: node.position || { x: 0, y: 0 },
           data: {
-            category: node.data.category,
-            technologies: node.data.technologies,
-            props: node.data.props,
-            simulation: node.data.simulation,
-            iconName: node.data.iconName || 'Server',
-            status: (node.data.status as any) || 'idle',
+            category: node.metadata.category as any,
+            technologies: node.metadata.technologies,
+            props: node.metadata.props,
+            simulation: node.metadata.simulation,
+            iconName: node.metadata.iconName || 'Server',
+            status: (node.metadata.status as any) || 'idle',
           },
         })) as SystemNode[];
 
+        // Convert EdgeModel[] to SystemEdge[]
         const edges = diagram.edges.map((edge) => ({
           id: edge.id,
           source: edge.source,

@@ -13,9 +13,9 @@ public class PromptBuilderTests
         var builder = new PromptBuilder();
 
         var diagramData = new DiagramContent(
-            Nodes: new List<SystemNode>
+            Nodes: new List<NodeModel>
             {
-                new SystemNode(
+                new NodeModel(
                     Id: "node_1",
                     Type: "customNode",
                     Metadata: new NodeMetadata(
@@ -45,7 +45,7 @@ public class PromptBuilderTests
                     ),
                     Position: new Position(100, 100)
                 ),
-                new SystemNode(
+                new NodeModel(
                     Id: "node_2",
                     Type: "customNode",
                     Metadata: new NodeMetadata(
@@ -70,7 +70,7 @@ public class PromptBuilderTests
                     ),
                     Position: new Position(300, 100)
                 ),
-                new SystemNode(
+                new NodeModel(
                     Id: "node_3",
                     Type: "customNode",
                     Metadata: new NodeMetadata(
@@ -99,7 +99,7 @@ public class PromptBuilderTests
                     Id: "edge_1",
                     Source: "node_1",
                     Target: "node_2",
-                    Label: "HTTP Request",
+                    Type: "smoothstep",
                     Data: new EdgeData(
                         Protocol: "HTTPS",
                         Auth: "JWT",
@@ -111,7 +111,7 @@ public class PromptBuilderTests
                     Id: "edge_2",
                     Source: "node_2",
                     Target: "node_3",
-                    Label: "Database Query",
+                    Type: "smoothstep",
                     Data: new EdgeData(
                         Protocol: "TCP",
                         Auth: "Password",
@@ -166,7 +166,7 @@ public class PromptBuilderTests
         // Arrange
         var builder = new PromptBuilder();
         var emptyDiagram = new DiagramContent(
-            Nodes: new List<SystemNode>(),
+            Nodes: new List<NodeModel>(),
             Edges: new List<EdgeModel>()
         );
 
@@ -185,9 +185,9 @@ public class PromptBuilderTests
         // Arrange
         var builder = new PromptBuilder();
         var minimalDiagram = new DiagramContent(
-            Nodes: new List<SystemNode>
+            Nodes: new List<NodeModel>
             {
-                new SystemNode(
+                new NodeModel(
                     Id: "node_1",
                     Type: "customNode",
                     Metadata: new NodeMetadata(

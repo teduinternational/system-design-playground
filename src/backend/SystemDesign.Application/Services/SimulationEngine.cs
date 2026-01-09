@@ -1,3 +1,4 @@
+using SystemDesign.Domain.Extensions;
 using SystemDesign.Domain.Models;
 
 namespace SystemDesign.Application.Services;
@@ -137,7 +138,7 @@ public sealed class SimulationEngine : ISimulationEngine
         var queue = new Queue<(string NodeId, List<string> Path, double Latency)>();
         
         // Tính latency với jitter: BaseLatency + (Random * Jitter)
-        var startLatency = startNode.LatencyMs + (random.NextDouble() * (startNode.JitterMs ?? 0));
+        var startLatency = startNode.GetLatencyMs() + (random.NextDouble() * (startNode.GetJitterMs() ?? 0));
         queue.Enqueue((startNodeId, [startNodeId], startLatency));
         longestPaths[startNodeId] = new PathInfo([startNodeId], startLatency);
 
@@ -153,8 +154,8 @@ public sealed class SimulationEngine : ISimulationEngine
                 var neighborNode = request.Nodes.First(n => n.Id == neighborId);
                 
                 // Tính latency với jitter cho neighbor node
-                var neighborLatency = neighborNode.LatencyMs + (random.NextDouble() * (neighborNode.JitterMs ?? 0));
-                var edgeLatency = edge.LatencyMs + (random.NextDouble() * (edge.JitterMs ?? 0));
+                var neighborLatency = neighborNode.GetLatencyMs() + (random.NextDouble() * (neighborNode.GetJitterMs() ?? 0));
+                var edgeLatency = edge.GetLatencyMs() + (random.NextDouble() * (edge.GetJitterMs() ?? 0));
                 var newLatency = currentLatency + edgeLatency + neighborLatency;
                 var newPath = new List<string>(currentPath) { neighborId };
 
@@ -204,8 +205,8 @@ public sealed class SimulationEngine : ISimulationEngine
         var queue = new Queue<(string NodeId, List<string> Path, double Latency)>();
         
         // Khởi tạo với start node
-        queue.Enqueue((startNodeId, [startNodeId], startNode.LatencyMs));
-        longestPaths[startNodeId] = new PathInfo([startNodeId], startNode.LatencyMs);
+        queue.Enqueue((startNodeId, new List<string> { startNodeId }, startNode.GetLatencyMs()));
+        longestPaths[startNodeId] = new PathInfo(new List<string> { startNodeId }, startNode.GetLatencyMs());
 
         // BFS traversal
         while (queue.Count > 0)
@@ -221,7 +222,7 @@ public sealed class SimulationEngine : ISimulationEngine
                 var neighborNode = request.Nodes.First(n => n.Id == neighborId);
                 
                 // Tính latency mới: current latency + edge latency + neighbor node latency
-                var newLatency = currentLatency + edge.LatencyMs + neighborNode.LatencyMs;
+                var newLatency = currentLatency + edge.GetLatencyMs() + neighborNode.GetLatencyMs();
                 var newPath = new List<string>(currentPath) { neighborId };
 
                 // Kiểm tra xem đây có phải longest path đến neighbor này không
@@ -269,9 +270,9 @@ public sealed class SimulationEngine : ISimulationEngine
     /// <summary>
     /// Build adjacency list representation của graph
     /// </summary>
-    private Dictionary<string, List<(string TargetNodeId, SimulationEdge Edge)>> BuildAdjacencyList(SimulationRequest request)
+    private Dictionary<string, List<(string TargetNodeId, EdgeModel Edge)>> BuildAdjacencyList(SimulationRequest request)
     {
-        var adjacencyList = new Dictionary<string, List<(string, SimulationEdge)>>();
+        var adjacencyList = new Dictionary<string, List<(string, EdgeModel)>>();
 
         foreach (var edge in request.Edges)
         {
@@ -288,21 +289,21 @@ public sealed class SimulationEngine : ISimulationEngine
     /// <summary>
     /// Tìm tất cả entry nodes (nodes không có incoming edges hoặc marked as entry)
     /// </summary>
-    private List<SimulationNode> FindEntryNodes(SimulationRequest request)
+    private List<NodeModel> FindEntryNodes(SimulationRequest request)
     {
         var nodesWithIncoming = new HashSet<string>(request.Edges.Select(e => e.Target));
         
         return request.Nodes
-            .Where(n => n.IsEntryPoint || !nodesWithIncoming.Contains(n.Id))
+            .Where(n => n.IsEntryPoint() || !nodesWithIncoming.Contains(n.Id))
             .ToList();
     }
 
     /// <summary>
     /// Tìm tất cả end nodes (nodes không có outgoing edges)
     /// </summary>
-    private List<SimulationNode> FindEndNodes(
+    private List<NodeModel> FindEndNodes(
         SimulationRequest request,
-        Dictionary<string, List<(string, SimulationEdge)>> adjacencyList)
+        Dictionary<string, List<(string, EdgeModel)>> adjacencyList)
     {
         return request.Nodes
             .Where(n => !adjacencyList.ContainsKey(n.Id) || adjacencyList[n.Id].Count == 0)
@@ -357,7 +358,7 @@ public sealed class SimulationEngine : ISimulationEngine
                 
                 // Tính latency với jitter
                 var neighborLatency = CalculateNodeLatencyWithJitter(neighborNode, random);
-                var edgeLatency = edge.LatencyMs + (random.NextDouble() * (edge.JitterMs ?? 0));
+                var edgeLatency = edge.GetLatencyMs() + (random.NextDouble() * (edge.GetJitterMs() ?? 0));
                 
                 // Áp dụng queuing delay nếu neighbor node bị overload
                 var queueingDelay = CalculateQueueingDelay(neighborNode, nodeLoadCounter, request.ConcurrentRequests);
@@ -407,16 +408,16 @@ public sealed class SimulationEngine : ISimulationEngine
     /// Công thức: BaseLatency * (LoadFactor ^ 2) khi LoadFactor > 1
     /// </summary>
     private double CalculateQueueingDelay(
-        SimulationNode node,
+        NodeModel node,
         Dictionary<string, int> nodeLoadCounter,
         int concurrentRequests)
     {
-        if (node.Capacity == null || node.Capacity <= 0)
+        if (node.GetCapacity() == null || node.GetCapacity() <= 0)
             return 0;
 
         // Tính load factor: số requests hiện tại / capacity
         var currentLoad = nodeLoadCounter.GetValueOrDefault(node.Id, 0) + concurrentRequests;
-        var loadFactor = currentLoad / node.Capacity.Value;
+        var loadFactor = currentLoad / node.GetCapacity()!.Value;
 
         // Nếu không overload, không có queuing delay
         if (loadFactor <= 1.0)
@@ -424,7 +425,7 @@ public sealed class SimulationEngine : ISimulationEngine
 
         // Queuing delay tăng theo cấp số nhân khi overload
         // Công thức: BaseLatency * (LoadFactor - 1)^2
-        var queuingDelay = node.LatencyMs * Math.Pow(loadFactor - 1, 2);
+        var queuingDelay = node.GetLatencyMs() * Math.Pow(loadFactor - 1, 2);
         
         return queuingDelay;
     }
@@ -432,9 +433,9 @@ public sealed class SimulationEngine : ISimulationEngine
     /// <summary>
     /// Tính node latency với jitter
     /// </summary>
-    private double CalculateNodeLatencyWithJitter(SimulationNode node, Random random)
+    private double CalculateNodeLatencyWithJitter(NodeModel node, Random random)
     {
-        return node.LatencyMs + (random.NextDouble() * (node.JitterMs ?? 0));
+        return node.GetLatencyMs() + (random.NextDouble() * (node.GetJitterMs() ?? 0));
     }
 
     /// <summary>
@@ -466,11 +467,11 @@ public sealed class SimulationEngine : ISimulationEngine
     {
         var overloadedNodes = new List<NodeQueueingInfo>();
 
-        foreach (var node in request.Nodes.Where(n => n.Capacity.HasValue))
+        foreach (var node in request.Nodes.Where(n => n.GetCapacity().HasValue))
         {
             var actualLoad = nodeLoadCounter.GetValueOrDefault(node.Id, 0);
             var loadFactor = actualLoad / (double)totalSimulations;
-            var capacity = node.Capacity!.Value;
+            var capacity = node.GetCapacity()!.Value;
 
             // Chỉ báo cáo nếu node bị overload
             if (loadFactor > capacity)
@@ -504,10 +505,10 @@ public sealed class SimulationEngine : ISimulationEngine
     {
         var bottlenecks = new List<BottleneckInfo>();
 
-        foreach (var node in request.Nodes.Where(n => n.Capacity.HasValue && n.Capacity > 0))
+        foreach (var node in request.Nodes.Where(n => n.GetCapacity().HasValue && n.GetCapacity() > 0))
         {
             var actualLoad = nodeLoadCounter.GetValueOrDefault(node.Id, 0);
-            var capacity = node.Capacity!.Value;
+            var capacity = node.GetCapacity()!.Value;
             
             // Tính utilization: số requests thực tế / capacity
             // Chia cho totalSimulations để chuẩn hóa về tỷ lệ per simulation

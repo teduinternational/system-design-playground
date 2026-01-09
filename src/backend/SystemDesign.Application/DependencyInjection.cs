@@ -14,6 +14,9 @@ public static class DependencyInjection
         // Đăng ký Simulation Engine
         services.AddScoped<ISimulationEngine, SimulationEngine>();
 
+        // Đăng ký Comparison Service
+        services.AddScoped<IComparisonService, ComparisonService>();
+
         // Đăng ký AI Services
         services.AddScoped<PromptBuilder>();
         services.AddScoped<ArchitectureAnalysisService>();

@@ -60,8 +60,15 @@ export type {
   UpdateScenarioDto,
 } from './types/scenario.types';
 
+export type {
+  ComparisonResult,
+  ScenarioMetrics,
+  ComparisonDifferences,
+} from './comparison.api';
+
 // Re-export services
 export { diagramApi } from './diagram.service';
 export { scenarioApi } from './scenario.service';
 export { simulationApi } from './simulation.service';
 export { runApi } from './run.service';
+export { comparisonApi } from './comparison.api';

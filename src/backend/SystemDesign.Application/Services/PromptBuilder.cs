@@ -56,7 +56,7 @@ public class PromptBuilder
     /// <summary>
     /// Xây dựng mô tả chi tiết cho một node
     /// </summary>
-    private void BuildNodeDescription(StringBuilder sb, SystemNode node)
+    private void BuildNodeDescription(StringBuilder sb, NodeModel node)
     {
         var metadata = node.Metadata;
 
@@ -142,7 +142,7 @@ public class PromptBuilder
     /// <summary>
     /// Xây dựng mô tả cho một edge (connection)
     /// </summary>
-    private void BuildEdgeDescription(StringBuilder sb, EdgeModel edge, List<SystemNode> nodes)
+    private void BuildEdgeDescription(StringBuilder sb, EdgeModel edge, List<NodeModel> nodes)
     {
         // Tìm source và target node
         var sourceNode = nodes.FirstOrDefault(n => n.Id == edge.Source);
@@ -155,9 +155,9 @@ public class PromptBuilder
         sb.AppendLine($"Connection: [{sourceName}] → [{targetName}]");
         sb.AppendLine($"  Edge ID: {edge.Id}");
 
-        if (!string.IsNullOrEmpty(edge.Label))
+        if (!string.IsNullOrEmpty(edge.Type))
         {
-            sb.AppendLine($"  Label: {edge.Label}");
+            sb.AppendLine($"  Type: {edge.Type}");
         }
 
         // Edge Data

@@ -1,9 +1,11 @@
 import { useState, useCallback } from 'react';
 import { diagramApi, type DiagramDto, type CreateDiagramDto, type UpdateDiagramDto } from '@/services/api';
-import { useDiagramStore, type SerializedDiagram } from '@/stores/useDiagramStore';
+import { useDiagramStore } from '@/stores/useDiagramStore';
+import type { DiagramContent } from '@/services/types/diagram.types';
 
 /**
  * Hook to manage diagram persistence with backend API
+ * Uses DiagramContent format - synchronized with C# backend models
  */
 export function useApiDiagramPersistence() {
   const [isLoading, setIsLoading] = useState(false);
@@ -13,39 +15,8 @@ export function useApiDiagramPersistence() {
   const loadDiagram = useDiagramStore((state) => state.loadDiagram);
 
   /**
-   * Convert DiagramDto from API to SerializedDiagram format
-   */
-  const convertApiToSerialized = (dto: DiagramDto): SerializedDiagram => {
-    const parsedData = JSON.parse(dto.jsonData);
-    return {
-      metadata: {
-        id: dto.id,
-        name: dto.name,
-        description: dto.description || '',
-        createdAt: dto.createdAt,
-        updatedAt: dto.updatedAt || dto.createdAt,
-        version: dto.version,
-        createdBy: dto.createdBy || 'unknown',
-        tags: parsedData.metadata?.tags || [],
-      },
-      nodes: parsedData.nodes || [],
-      edges: parsedData.edges || [],
-    };
-  };
-
-  /**
-   * Convert SerializedDiagram to API format
-   */
-  const convertSerializedToApi = (diagram: SerializedDiagram): string => {
-    return JSON.stringify({
-      metadata: diagram.metadata,
-      nodes: diagram.nodes,
-      edges: diagram.edges,
-    });
-  };
-
-  /**
    * Load diagram from API by ID
+   * No conversion needed - API returns DiagramContent format
    */
   const loadDiagramFromApi = useCallback(async (id: string): Promise<boolean> => {
     setIsLoading(true);
@@ -53,8 +24,8 @@ export function useApiDiagramPersistence() {
     
     try {
       const dto = await diagramApi.getById(id);
-      const serializedDiagram = convertApiToSerialized(dto);
-      loadDiagram(serializedDiagram);
+      const diagram = JSON.parse(dto.jsonData) as DiagramContent;
+      loadDiagram(diagram);
       console.log('✅ Diagram loaded from API:', id);
       return true;
     } catch (err) {
@@ -69,6 +40,7 @@ export function useApiDiagramPersistence() {
 
   /**
    * Save current diagram to API (create new)
+   * Direct JSON.stringify - no conversion needed
    */
   const saveDiagramToApi = useCallback(async (
     name?: string,
@@ -80,7 +52,7 @@ export function useApiDiagramPersistence() {
     
     try {
       const diagram = serializeDiagram();
-      const jsonData = convertSerializedToApi(diagram);
+      const jsonData = JSON.stringify(diagram);
       
       const createDto: CreateDiagramDto = {
         name: name || diagram.metadata.name || 'Untitled Diagram',
@@ -104,6 +76,7 @@ export function useApiDiagramPersistence() {
 
   /**
    * Update existing diagram on API
+   * Direct JSON.stringify - no conversion needed
    */
   const updateDiagramOnApi = useCallback(async (
     id: string,
@@ -115,7 +88,7 @@ export function useApiDiagramPersistence() {
     
     try {
       const diagram = serializeDiagram();
-      const jsonData = convertSerializedToApi(diagram);
+      const jsonData = JSON.stringify(diagram);
       
       const updateDto: UpdateDiagramDto = {
         name: name || diagram.metadata.name || 'Untitled Diagram',
@@ -206,6 +179,7 @@ export function useApiDiagramPersistence() {
 
   /**
    * Import diagram from JSON file
+   * Direct JSON.parse - no conversion needed
    */
   const importDiagram = useCallback((file: File): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -214,7 +188,7 @@ export function useApiDiagramPersistence() {
       reader.onload = (e) => {
         try {
           const json = e.target?.result as string;
-          const diagram = JSON.parse(json) as SerializedDiagram;
+          const diagram = JSON.parse(json) as DiagramContent;
           loadDiagram(diagram);
           console.log('📤 Diagram imported from file:', file.name);
           resolve(true);

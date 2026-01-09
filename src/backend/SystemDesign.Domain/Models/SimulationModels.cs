@@ -1,44 +1,16 @@
 namespace SystemDesign.Domain.Models;
 
 /// <summary>
-/// Request model cho simulation
+/// Request model cho simulation - sử dụng NodeModel và EdgeModel trực tiếp
 /// </summary>
 public sealed record SimulationRequest
 {
-    public required List<SimulationNode> Nodes { get; init; }
-    public required List<SimulationEdge> Edges { get; init; }
+    public required List<NodeModel> Nodes { get; init; }
+    public required List<EdgeModel> Edges { get; init; }
     /// <summary>
     /// Số lượng concurrent requests để mô phỏng queuing delay
     /// </summary>
     public int ConcurrentRequests { get; init; } = 1;
-}
-
-/// <summary>
-/// Node trong simulation graph
-/// </summary>
-public sealed record SimulationNode
-{
-    public required string Id { get; init; }
-    public required string Type { get; init; }
-    public double LatencyMs { get; init; } = 0;
-    public double? JitterMs { get; init; } = 0;
-    public bool IsEntryPoint { get; init; } = false;
-    /// <summary>
-    /// Capacity tối đa (requests/second). Vượt quá sẽ gây queuing delay
-    /// </summary>
-    public double? Capacity { get; init; } = null;
-}
-
-/// <summary>
-/// Edge trong simulation graph
-/// </summary>
-public sealed record SimulationEdge
-{
-    public required string Id { get; init; }
-    public required string Source { get; init; }
-    public required string Target { get; init; }
-    public double LatencyMs { get; init; } = 0;
-    public double? JitterMs { get; init; } = 0;
 }
 
 /// <summary>

@@ -1,5 +1,5 @@
 
-export type AppView = 'projects' | 'editor' | 'settings' | 'simulate';
+export type AppView = 'projects' | 'editor' | 'settings' | 'simulate' | 'compare';
 
 export enum NodeType {
   COMPUTE = 'COMPUTE',

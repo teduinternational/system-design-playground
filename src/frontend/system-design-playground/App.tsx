@@ -5,6 +5,7 @@ import { ToastContainer } from './components/Toast';
 import { ProjectListPage } from './pages/ProjectListPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { EditorPage } from './pages/EditorPage';
+import { ComparePage } from './pages/ComparePage';
 
 const App: React.FC = () => {
   const [isSimulating, setIsSimulating] = useState(false);
@@ -41,6 +42,7 @@ const App: React.FC = () => {
               />
             } 
           />
+          <Route path="/compare" element={<ComparePage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>
         <ToastContainer />

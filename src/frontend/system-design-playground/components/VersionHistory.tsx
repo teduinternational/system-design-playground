@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Tag, GitBranch, Eye, RotateCcw, Trash2 } from 'lucide-react';
+import { Clock, Tag, GitBranch, Eye, RotateCcw, Trash2, GitCompare } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { scenarioApi, diagramApi, type ScenarioDto } from '@/services/api';
 import { useDiagramStore } from '@/stores/useDiagramStore';
 import { toast } from './Toast';
@@ -16,6 +17,9 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({ diagramId, onClo
   const [scenarios, setScenarios] = useState<ScenarioDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedScenario, setSelectedScenario] = useState<ScenarioDto | null>(null);
+  const [compareMode, setCompareMode] = useState(false);
+  const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
+  const navigate = useNavigate();
   
   const loadDiagram = useDiagramStore((state) => state.loadDiagram);
   const serializeDiagram = useDiagramStore((state) => state.serializeDiagram);
@@ -79,6 +83,29 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({ diagramId, onClo
     }
   };
 
+  // Toggle scenario selection for comparison
+  const toggleScenarioForCompare = (scenarioId: string) => {
+    setSelectedForCompare(prev => {
+      if (prev.includes(scenarioId)) {
+        return prev.filter(id => id !== scenarioId);
+      }
+      if (prev.length >= 2) {
+        toast.warning('You can only compare 2 versions at a time');
+        return prev;
+      }
+      return [...prev, scenarioId];
+    });
+  };
+
+  // Navigate to compare page
+  const handleCompare = () => {
+    if (selectedForCompare.length !== 2) {
+      toast.warning('Please select exactly 2 versions to compare');
+      return;
+    }
+    navigate(`/compare?scenario1=${selectedForCompare[0]}&scenario2=${selectedForCompare[1]}`);
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-US', {
       month: 'short',
@@ -96,14 +123,48 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({ diagramId, onClo
         <div className="p-4 border-b border-border flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-white">Version History</h2>
-            <p className="text-sm text-secondary">View and restore previous versions</p>
+            <p className="text-sm text-secondary">
+              {compareMode ? 'Select 2 versions to compare' : 'View and restore previous versions'}
+            </p>
           </div>
-          <button 
-            onClick={onClose}
-            className="text-secondary hover:text-white"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            {compareMode ? (
+              <>
+                <button
+                  onClick={handleCompare}
+                  disabled={selectedForCompare.length !== 2}
+                  className="px-3 py-1.5 bg-primary hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded text-sm font-medium transition-colors flex items-center gap-2"
+                >
+                  <GitCompare className="w-4 h-4" />
+                  Compare ({selectedForCompare.length}/2)
+                </button>
+                <button
+                  onClick={() => {
+                    setCompareMode(false);
+                    setSelectedForCompare([]);
+                  }}
+                  className="px-3 py-1.5 bg-surface-hover hover:bg-border text-white rounded text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setCompareMode(true)}
+                disabled={scenarios.length < 2}
+                className="px-3 py-1.5 bg-surface-hover hover:bg-border disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-sm transition-colors flex items-center gap-2"
+              >
+                <GitCompare className="w-4 h-4" />
+                Compare Versions
+              </button>
+            )}
+            <button 
+              onClick={onClose}
+              className="text-secondary hover:text-white p-1"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -123,10 +184,24 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({ diagramId, onClo
               {scenarios.map((scenario, index) => (
                 <div 
                   key={scenario.id}
-                  className="bg-background border border-border rounded-lg p-4 hover:border-primary/50 transition-colors"
+                  className={`bg-background border rounded-lg p-4 transition-all ${
+                    compareMode && selectedForCompare.includes(scenario.id)
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/50'
+                  } ${compareMode ? 'cursor-pointer' : ''}`}
+                  onClick={() => compareMode && toggleScenarioForCompare(scenario.id)}
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-3">
+                      {compareMode && (
+                        <input
+                          type="checkbox"
+                          checked={selectedForCompare.includes(scenario.id)}
+                          onChange={() => toggleScenarioForCompare(scenario.id)}
+                          className="w-4 h-4 text-primary bg-surface border-border rounded focus:ring-primary"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      )}
                       <div className={`w-2 h-2 rounded-full ${
                         scenario.isSnapshot ? 'bg-blue-500' : 'bg-green-500'
                       }`} />
@@ -149,22 +224,24 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({ diagramId, onClo
                       </div>
                     </div>
                     
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handlePreview(scenario)}
-                        className="p-1.5 text-secondary hover:text-primary hover:bg-primary/10 rounded transition-colors"
-                        title="Preview"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleRestore(scenario)}
-                        className="p-1.5 text-secondary hover:text-green-500 hover:bg-green-500/10 rounded transition-colors"
-                        title="Restore this version"
-                      >
-                        <RotateCcw className="w-4 h-4" />
-                      </button>
-                    </div>
+                    {!compareMode && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handlePreview(scenario)}
+                          className="p-1.5 text-secondary hover:text-primary hover:bg-primary/10 rounded transition-colors"
+                          title="Preview"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleRestore(scenario)}
+                          className="p-1.5 text-secondary hover:text-green-500 hover:bg-green-500/10 rounded transition-colors"
+                          title="Restore this version"
+                        >
+                          <RotateCcw className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                   
                   {scenario.changeLog && (

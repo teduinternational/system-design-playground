@@ -2,26 +2,15 @@
 // Simulation Types
 // ============================================
 
-export interface SimulationNode {
-  id: string;
-  type: string;
-  latencyMs: number;
-  jitterMs?: number;
-  capacity?: number;
-  isEntryPoint?: boolean;
-}
+import type { NodeModel, EdgeModel } from './diagram.types';
 
-export interface SimulationEdge {
-  id: string;
-  source: string;
-  target: string;
-  latencyMs: number;
-  jitterMs?: number;
-}
-
+/**
+ * Simulation Request - Dùng NodeModel và EdgeModel trực tiếp
+ * Khớp với C# SimulationRequest
+ */
 export interface SimulationRequest {
-  nodes: SimulationNode[];
-  edges: SimulationEdge[];
+  nodes: NodeModel[];
+  edges: EdgeModel[];
   concurrentRequests?: number;
 }
 

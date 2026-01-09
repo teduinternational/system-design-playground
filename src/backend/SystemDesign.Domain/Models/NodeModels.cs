@@ -51,7 +51,9 @@ public record NodeMetadata(
     string? Provider = null,
     NodeLogic? Logic = null,
     TechnicalProps? Props = null,
-    SimulationProps? Simulation = null
+    SimulationProps? Simulation = null,
+    string? IconName = null,
+    string? Status = null
 );
 
 /// <summary>
@@ -62,7 +64,7 @@ public record Position(double X, double Y);
 /// <summary>
 /// Model node duy nhất - dùng cho cả Backend logic và React Flow visualization
 /// </summary>
-public record SystemNode(
+public record NodeModel(
     string Id,
     string Type,
     NodeMetadata Metadata,

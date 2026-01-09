@@ -17,6 +17,6 @@ public record EdgeModel(
     string Id,
     string Source,
     string Target,
-    string? Label = null,
+    string? Type = null,
     EdgeData? Data = null
 );
