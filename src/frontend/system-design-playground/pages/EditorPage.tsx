@@ -16,7 +16,8 @@ import { useApiDiagramPersistence } from '../hooks/useApiDiagramPersistence';
 import { useSimulation } from '../hooks/useSimulation';
 import { scenarioApi } from '../services/api';
 import { exportCanvasToPng } from '../utils/exportCanvas';
-import type { SimulationRequest, SimulationNode, SimulationEdge } from '../services/types/simulation.types';
+import type { SimulationRequest } from '../services/types/simulation.types';
+import type { NodeModel, EdgeModel } from '../services/types/diagram.types';
 import sampleDiagram from '../mock-data/sample-diagram.json';
 
 interface EditorPageProps {
@@ -224,32 +225,46 @@ export const EditorPage: React.FC<EditorPageProps> = ({
       return;
     }
 
-    // Convert diagram to SimulationRequest
-    const simulationNodes: SimulationNode[] = nodes.map((node) => ({
+    // Convert SystemNode to NodeModel với đầy đủ metadata structure
+    const simulationNodes: NodeModel[] = nodes.map((node) => ({
       id: node.id,
-      type: node.data.label || node.type || 'Unknown',
-      latencyMs: node.data.latency || node.data.simulation?.processingTimeMs || 10,
-      jitterMs: node.data.jitterMs || node.data.simulation?.jitterMs || 0,
-      capacity: node.data.capacity || node.data.simulation?.capacity,
-      isEntryPoint: node.data.isEntryPoint || node.data.nodeCategory === 'entry',
+      type: node.type || 'custom',
+      metadata: {
+        label: node.data.label || node.id,
+        category: node.data.category || 'Compute',
+        specs: {
+          latencyBase: node.data.latency || node.data.simulation?.processingTimeMs || 10,
+          maxThroughput: node.data.maxThroughput || 1000,
+          reliability: node.data.reliability || 0.99,
+        },
+        technologies: node.data.technologies || [],
+        props: node.data.props || {},
+        simulation: {
+          processingTimeMs: node.data.simulation?.processingTimeMs || 10,
+          failureRate: node.data.simulation?.failureRate || 0.001,
+          queueSize: node.data.simulation?.queueSize,
+          currentLoad: node.data.simulation?.currentLoad,
+        },
+        iconName: node.data.iconName,
+        status: node.data.status || 'idle',
+      },
+      position: node.position,
     }));
 
     console.log('🔍 All simulation nodes:', simulationNodes);
-    console.log('🎯 Entry nodes:', simulationNodes.filter(n => n.isEntryPoint));
 
-    // Fallback: If no entry point, mark the first node as entry
-    const hasEntryPoint = simulationNodes.some(n => n.isEntryPoint);
-    if (!hasEntryPoint && simulationNodes.length > 0) {
-      console.warn('⚠️ No entry point found, marking first node as entry');
-      simulationNodes[0].isEntryPoint = true;
-    }
-
-    const simulationEdges: SimulationEdge[] = edges.map((edge) => ({
+    // Convert SystemEdge to EdgeModel
+    const simulationEdges: EdgeModel[] = edges.map((edge) => ({
       id: edge.id,
       source: edge.source,
       target: edge.target,
-      latencyMs: edge.data?.latency || 5,
-      jitterMs: edge.data?.jitterMs || 0,
+      type: edge.type,
+      data: edge.data ? {
+        protocol: edge.data.protocol || 'https',
+        auth: edge.data.auth,
+        trafficWeight: edge.data.trafficWeight || 1.0,
+        networkLatency: edge.data.latency || edge.data.networkLatency || 5,
+      } : undefined,
     }));
 
     const request: SimulationRequest = {

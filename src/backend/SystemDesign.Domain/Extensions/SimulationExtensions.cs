@@ -26,7 +26,8 @@ public static class SimulationExtensions
     /// Kiểm tra node có phải là Entry Point không
     /// </summary>
     public static bool IsEntryPoint(this NodeModel node) 
-        => node.Metadata.Category == Enums.NodeCategory.EntryPoint;
+        => node.Metadata.Category.Equals("EntryPoint", StringComparison.OrdinalIgnoreCase) ||
+           node.Metadata.Category.Equals("Entry Point", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Lấy capacity (throughput tối đa) của node từ Specs.MaxThroughput

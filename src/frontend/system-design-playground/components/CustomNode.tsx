@@ -39,14 +39,16 @@ const IconMap: Record<string, React.FC<any>> = {
 };
 
 export const CustomNode = memo(({ data, selected }: NodeProps<any>) => {
-  const Icon = data.iconName ? IconMap[data.iconName] : Box;
+  // Safe access to data
+  const safeData = data || {};
+  const Icon = safeData.iconName ? IconMap[safeData.iconName] : Box;
   
   // Extract data
-  const category = data.category || data.type || 'Unknown';
-  const technologies = data.technologies?.join(', ') || data.subLabel || 'N/A';
-  const isSimulating = data.isSimulating;
-  const simulation = data.simulation || {};
-  const props = data.props || {};
+  const category = safeData.category || safeData.type || 'Unknown';
+  const technologies = safeData.technologies?.join(', ') || safeData.subLabel || 'N/A';
+  const isSimulating = safeData.isSimulating;
+  const simulation = safeData.simulation || {};
+  const props = safeData.props || {};
   
   // Calculate quick stats to display
   const instanceCount = props.instanceCount || 1;

@@ -28,8 +28,9 @@ public class ComparisonService(
             throw new InvalidOperationException($"Scenario {scenario2Id} not found");
 
         // Parse content JSON as DiagramContent
-        var diagram1 = JsonSerializer.Deserialize<DiagramContent>(scenario1.ContentJson);
-        var diagram2 = JsonSerializer.Deserialize<DiagramContent>(scenario2.ContentJson);
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var diagram1 = JsonSerializer.Deserialize<DiagramContent>(scenario1.ContentJson, options);
+        var diagram2 = JsonSerializer.Deserialize<DiagramContent>(scenario2.ContentJson, options);
 
         if (diagram1 == null || diagram2 == null)
             throw new InvalidOperationException("Failed to deserialize scenario content");
@@ -109,7 +110,8 @@ public class ComparisonService(
     {
         // Simple heuristic: base throughput on entry point capacities
         var entryNodes = request.Nodes
-            .Where(n => n.Metadata.Category == Domain.Enums.NodeCategory.EntryPoint)
+            .Where(n => n.Metadata.Category.Equals("EntryPoint", StringComparison.OrdinalIgnoreCase) ||
+                       n.Metadata.Category.Equals("Entry Point", StringComparison.OrdinalIgnoreCase))
             .ToList();
         
         if (entryNodes.Count == 0)
@@ -128,12 +130,14 @@ public class ComparisonService(
 
         foreach (var node in request.Nodes)
         {
-            var baseCost = node.Metadata.Category switch
+            var category = node.Metadata.Category.Replace(" ", "");
+            var baseCost = category switch
             {
-                Domain.Enums.NodeCategory.Storage => 50.0,  // $50/month
-                Domain.Enums.NodeCategory.Middleware => 30.0,
-                Domain.Enums.NodeCategory.TrafficManager => 20.0,
-                Domain.Enums.NodeCategory.Compute => 40.0,
+                "Storage" => 50.0,  // $50/month
+                "Middleware" => 30.0,
+                "TrafficManager" => 20.0,
+                "Compute" => 40.0,
+                "EntryPoint" => 20.0,
                 _ => 35.0
             };
 

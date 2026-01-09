@@ -14,8 +14,14 @@
       "id": "node_lb_01",
       "type": "custom",
       "position": { "x": 550, "y": 50 },
-      "data": {
+      "metadata": {
+        "label": "Load Balancer",
         "category": "Traffic Manager",
+        "specs": {
+          "latencyBase": 5,
+          "maxThroughput": 100000,
+          "reliability": 0.999
+        },
         "technologies": ["NGINX", "Kong Gateway"],
         "props": {
           "instanceCount": 3,
@@ -40,8 +46,14 @@
       "id": "node_api_gateway",
       "type": "custom",
       "position": { "x": 550, "y": 230 },
-      "data": {
+      "metadata": {
+        "label": "API Gateway",
         "category": "Traffic Manager",
+        "specs": {
+          "latencyBase": 10,
+          "maxThroughput": 50000,
+          "reliability": 0.998
+        },
         "technologies": ["API Gateway", "AWS API Gateway"],
         "props": {
           "instanceCount": 2,
@@ -64,8 +76,14 @@
       "id": "node_auth_service",
       "type": "custom",
       "position": { "x": 200, "y": 420 },
-      "data": {
+      "metadata": {
+        "label": "Auth Service",
         "category": "Compute",
+        "specs": {
+          "latencyBase": 50,
+          "maxThroughput": 10000,
+          "reliability": 0.99
+        },
         "technologies": ["WebApi", "Microservice"],
         "props": {
           "instanceCount": 4,
@@ -91,8 +109,14 @@
       "id": "node_product_service",
       "type": "custom",
       "position": { "x": 550, "y": 420 },
-      "data": {
+      "metadata": {
+        "label": "Product Service",
         "category": "Compute",
+        "specs": {
+          "latencyBase": 30,
+          "maxThroughput": 20000,
+          "reliability": 0.995
+        },
         "technologies": ["Microservice", "ContainerService"],
         "props": {
           "instanceCount": 6,
@@ -119,8 +143,14 @@
       "id": "node_order_service",
       "type": "custom",
       "position": { "x": 900, "y": 420 },
-      "data": {
+      "metadata": {
+        "label": "Order Service",
         "category": "Compute",
+        "specs": {
+          "latencyBase": 45,
+          "maxThroughput": 15000,
+          "reliability": 0.992
+        },
         "technologies": ["Microservice", "WebApi"],
         "props": {
           "instanceCount": 5,
@@ -146,8 +176,14 @@
       "id": "node_redis_cache",
       "type": "custom",
       "position": { "x": 200, "y": 620 },
-      "data": {
+      "metadata": {
+        "label": "Redis Cache",
         "category": "Middleware",
+        "specs": {
+          "latencyBase": 2,
+          "maxThroughput": 100000,
+          "reliability": 0.9999
+        },
         "technologies": ["Redis", "Redis Cluster"],
         "props": {
           "instanceCount": 3,
@@ -171,8 +207,14 @@
       "id": "node_postgres_db",
       "type": "custom",
       "position": { "x": 550, "y": 620 },
-      "data": {
+      "metadata": {
+        "label": "PostgreSQL Database",
         "category": "Storage",
+        "specs": {
+          "latencyBase": 20,
+          "maxThroughput": 5000,
+          "reliability": 0.998
+        },
         "technologies": ["PostgreSQL 15", "RDS"],
         "props": {
           "instanceCount": 2,
@@ -199,8 +241,14 @@
       "id": "node_kafka",
       "type": "custom",
       "position": { "x": 900, "y": 620 },
-      "data": {
+      "metadata": {
+        "label": "Kafka Message Broker",
         "category": "Middleware",
+        "specs": {
+          "latencyBase": 8,
+          "maxThroughput": 50000,
+          "reliability": 0.999
+        },
         "technologies": ["Apache Kafka", "MSK"],
         "props": {
           "instanceCount": 3,
@@ -228,7 +276,7 @@
       "id": "edge_lb_to_gateway",
       "source": "node_lb_01",
       "target": "node_api_gateway",
-      "label": "HTTPS",
+      "type": "smoothstep",
       "data": {
         "protocol": "https",
         "auth": "TLS",
@@ -240,7 +288,7 @@
       "id": "edge_gateway_to_auth",
       "source": "node_api_gateway",
       "target": "node_auth_service",
-      "label": "REST/JWT",
+      "type": "smoothstep",
       "data": {
         "protocol": "https",
         "auth": "JWT",
@@ -252,7 +300,7 @@
       "id": "edge_gateway_to_product",
       "source": "node_api_gateway",
       "target": "node_product_service",
-      "label": "gRPC",
+      "type": "smoothstep",
       "data": {
         "protocol": "grpc",
         "auth": "mTLS",
@@ -264,7 +312,7 @@
       "id": "edge_gateway_to_order",
       "source": "node_api_gateway",
       "target": "node_order_service",
-      "label": "REST",
+      "type": "smoothstep",
       "data": {
         "protocol": "https",
         "auth": "JWT",
@@ -276,7 +324,7 @@
       "id": "edge_auth_to_redis",
       "source": "node_auth_service",
       "target": "node_redis_cache",
-      "label": "Redis Protocol",
+      "type": "smoothstep",
       "data": {
         "protocol": "redis",
         "trafficWeight": 1.0,
@@ -287,7 +335,7 @@
       "id": "edge_product_to_db",
       "source": "node_product_service",
       "target": "node_postgres_db",
-      "label": "SQL",
+      "type": "smoothstep",
       "data": {
         "protocol": "tcp",
         "auth": "Password",
@@ -299,7 +347,7 @@
       "id": "edge_product_to_redis",
       "source": "node_product_service",
       "target": "node_redis_cache",
-      "label": "Cache",
+      "type": "smoothstep",
       "data": {
         "protocol": "redis",
         "trafficWeight": 0.8,
@@ -310,7 +358,7 @@
       "id": "edge_order_to_db",
       "source": "node_order_service",
       "target": "node_postgres_db",
-      "label": "SQL",
+      "type": "smoothstep",
       "data": {
         "protocol": "tcp",
         "auth": "Password",
@@ -322,7 +370,7 @@
       "id": "edge_order_to_kafka",
       "source": "node_order_service",
       "target": "node_kafka",
-      "label": "Events",
+      "type": "smoothstep",
       "data": {
         "protocol": "kafka",
         "trafficWeight": 1.0,

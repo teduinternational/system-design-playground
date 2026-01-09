@@ -235,7 +235,8 @@ public class PromptBuilder
 
         // Xác định entry points
         var entryPoints = diagramData.Nodes
-            .Where(n => n.Metadata.Category == Domain.Enums.NodeCategory.EntryPoint)
+            .Where(n => n.Metadata.Category.Equals("EntryPoint", StringComparison.OrdinalIgnoreCase) ||
+                       n.Metadata.Category.Equals("Entry Point", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         if (entryPoints.Any())

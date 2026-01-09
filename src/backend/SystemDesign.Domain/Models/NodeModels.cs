@@ -1,7 +1,5 @@
 namespace SystemDesign.Domain.Models;
 
-using SystemDesign.Domain.Enums;
-
 /// <summary>
 /// Thông số kỹ thuật cho mô phỏng node
 /// </summary>
@@ -45,7 +43,7 @@ public record SimulationProps(
 /// </summary>
 public record NodeMetadata(
     string Label,
-    NodeCategory Category,
+    string Category, // Changed from NodeCategory enum to string for flexibility
     NodeSpecs Specs,
     List<string>? Technologies = null,
     string? Provider = null,

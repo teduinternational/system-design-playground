@@ -153,8 +153,14 @@ const CanvasInner: React.FC<CanvasProps> = ({
         type: 'custom',
         position,
         data: {
+          label: label,
           category: getNodeCategory(nodeType),
           technologies: [label],
+          specs: {
+            latencyBase: 10,
+            maxThroughput: 1000,
+            reliability: 0.99,
+          },
           props: {
             instanceCount: 1,
             region: 'us-east-1',

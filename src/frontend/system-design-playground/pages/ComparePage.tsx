@@ -4,6 +4,7 @@ import { CompareView } from '../components/CompareView';
 import { scenarioApi, comparisonApi } from '../services/api';
 import type { ScenarioDto } from '../services/types/scenario.types';
 import type { ComparisonResult } from '../services/comparison.api';
+import type { DiagramContent } from '../services/types/diagram.types';
 import { Node, Edge } from 'reactflow';
 import { toast } from '../components/Toast';
 
@@ -49,11 +50,43 @@ export const ComparePage: React.FC = () => {
 
   const parseScenarioContent = (contentJson: string): { nodes: Node[]; edges: Edge[] } => {
     try {
-      const content = JSON.parse(contentJson);
-      return {
-        nodes: content.nodes || [],
-        edges: content.edges || [],
-      };
+      const diagram: DiagramContent = JSON.parse(contentJson);
+      
+      // Convert NodeModel[] to SystemNode[] (React Flow format)
+      const nodes: Node[] = (diagram.nodes || []).map((node) => ({
+        id: node.id,
+        type: node.type || 'custom',
+        position: node.position || { x: 0, y: 0 },
+        data: {
+          label: node.metadata.label || node.id,
+          category: node.metadata.category,
+          technologies: node.metadata.technologies || [],
+          specs: node.metadata.specs || {
+            latencyBase: 10,
+            maxThroughput: 1000,
+            reliability: 0.99,
+          },
+          provider: node.metadata.provider,
+          props: node.metadata.props || {},
+          simulation: node.metadata.simulation || {
+            processingTimeMs: 10,
+            failureRate: 0.001,
+          },
+          iconName: node.metadata.iconName || 'Server',
+          status: node.metadata.status || 'idle',
+        },
+      }));
+
+      // Convert EdgeModel[] to SystemEdge[] (React Flow format)
+      const edges: Edge[] = (diagram.edges || []).map((edge) => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        type: edge.type || 'smoothstep',
+        data: edge.data,
+      }));
+
+      return { nodes, edges };
     } catch (err) {
       console.error('Failed to parse scenario content:', err);
       return { nodes: [], edges: [] };
