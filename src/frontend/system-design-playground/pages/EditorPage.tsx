@@ -327,7 +327,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({
             onNodeSelect={(nodeId) => selectNode(nodeId)}
             isSimulating={isSimulating}
           />
-          <MetricsPanel />
+          <MetricsPanel percentileResult={percentileResult} />
         </div>
         <PropertiesPanel /> 
       </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, TrendingUp, Zap, AlertCircle, CheckCircle2, Clock, Activity, AlertTriangle, XOctagon } from 'lucide-react';
 import type { AnalyzeResponse, PercentileSimulationResult } from '../services/types/simulation.types';
+import { ThroughputComparisonChart } from './ThroughputComparisonChart';
 
 interface SimulationResultModalProps {
   isOpen: boolean;
@@ -421,6 +422,44 @@ export const SimulationResultModal: React.FC<SimulationResultModalProps> = ({
                     <div className="mt-4 text-xs text-secondary bg-surface/50 p-3 rounded border border-border">
                       <strong className="text-purple-500">💡 Recommendation:</strong> Bottlenecks limit the entire system's throughput. 
                       Priority should be given to scaling Critical bottlenecks first, then High severity ones.
+                    </div>
+                  </div>
+                )}
+
+                {/* Throughput Comparison Chart */}
+                {(percentileResult.overloadedNodes || percentileResult.bottlenecks) && 
+                 (percentileResult.overloadedNodes?.length > 0 || percentileResult.bottlenecks?.length > 0) && (
+                  <div className="bg-surface-hover rounded-lg p-5 border border-border mt-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Activity className="w-5 h-5 text-blue-500" />
+                      <h4 className="font-bold text-white">Node Throughput Comparison</h4>
+                      <span className="text-xs text-secondary bg-blue-500/10 px-2 py-1 rounded">
+                        Visual bottleneck ranking
+                      </span>
+                    </div>
+                    <div className="h-80">
+                      <ThroughputComparisonChart
+                        nodes={[
+                          ...(percentileResult.overloadedNodes?.map(node => ({
+                            nodeId: node.nodeId,
+                            throughput: node.actualLoad,
+                            capacity: node.capacity,
+                            isBottleneck: percentileResult.bottlenecks?.some(b => b.nodeId === node.nodeId) || false,
+                          })) || []),
+                          ...(percentileResult.bottlenecks
+                            ?.filter(b => !percentileResult.overloadedNodes?.some(n => n.nodeId === b.nodeId))
+                            .map(bottleneck => ({
+                              nodeId: bottleneck.nodeId,
+                              throughput: bottleneck.currentLoad,
+                              capacity: bottleneck.capacity,
+                              isBottleneck: true,
+                            })) || []),
+                        ]}
+                      />
+                    </div>
+                    <div className="mt-3 text-xs text-secondary bg-surface/50 p-3 rounded border border-border">
+                      <strong className="text-blue-500">📊 Visual Guide:</strong> Nodes are ranked by throughput. 
+                      Red bars indicate bottlenecks, orange shows high utilization (&gt;80%), blue is normal.
                     </div>
                   </div>
                 )}
