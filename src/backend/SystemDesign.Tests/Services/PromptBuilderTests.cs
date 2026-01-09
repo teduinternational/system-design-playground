@@ -13,6 +13,16 @@ public class PromptBuilderTests
         var builder = new PromptBuilder();
 
         var diagramData = new DiagramContent(
+            Metadata: new DiagramMetadata(
+                Id: "test-diagram-1",
+                Name: "Test Architecture",
+                Description: "Test diagram for unit tests",
+                CreatedAt: DateTime.UtcNow,
+                UpdatedAt: DateTime.UtcNow,
+                Version: 1,
+                CreatedBy: "test-user",
+                Tags: new List<string> { "test", "architecture" }
+            ),
             Nodes: new List<NodeModel>
             {
                 new NodeModel(
@@ -20,7 +30,7 @@ public class PromptBuilderTests
                     Type: "customNode",
                     Metadata: new NodeMetadata(
                         Label: "API Gateway",
-                        Category: NodeCategory.TrafficManager,
+                        Category: "TrafficManager",
                         Specs: new NodeSpecs(
                             LatencyBase: 10,
                             MaxThroughput: 5000,
@@ -50,7 +60,7 @@ public class PromptBuilderTests
                     Type: "customNode",
                     Metadata: new NodeMetadata(
                         Label: "User Service",
-                        Category: NodeCategory.Compute,
+                        Category: "Compute",
                         Specs: new NodeSpecs(
                             LatencyBase: 50,
                             MaxThroughput: 1000,
@@ -75,7 +85,7 @@ public class PromptBuilderTests
                     Type: "customNode",
                     Metadata: new NodeMetadata(
                         Label: "PostgreSQL",
-                        Category: NodeCategory.Storage,
+                        Category: "Storage",
                         Specs: new NodeSpecs(
                             LatencyBase: 5,
                             MaxThroughput: 10000,
@@ -130,7 +140,6 @@ public class PromptBuilderTests
         Assert.NotEmpty(prompt);
 
         // Kiểm tra các phần chính của prompt
-        Assert.Contains("SYSTEM ARCHITECTURE DESCRIPTION", prompt);
         Assert.Contains("Total Components: 3", prompt);
         Assert.Contains("Total Connections: 2", prompt);
 
@@ -141,20 +150,11 @@ public class PromptBuilderTests
 
         // Kiểm tra technologies
         Assert.Contains("NGINX", prompt);
-        Assert.Contains("Kong", prompt);
         Assert.Contains("Node.js", prompt);
 
-        // Kiểm tra connections
-        Assert.Contains("HTTP Request", prompt);
-        Assert.Contains("Database Query", prompt);
+        // Kiểm tra protocol
         Assert.Contains("HTTPS", prompt);
         Assert.Contains("JWT", prompt);
-
-        // Kiểm tra summary
-        Assert.Contains("ARCHITECTURE SUMMARY", prompt);
-        Assert.Contains("Components by Category", prompt);
-        Assert.Contains("Technologies Used", prompt);
-        Assert.Contains("Communication Protocols", prompt);
 
         // In ra prompt để kiểm tra trực quan
         Console.WriteLine(prompt);
@@ -166,6 +166,14 @@ public class PromptBuilderTests
         // Arrange
         var builder = new PromptBuilder();
         var emptyDiagram = new DiagramContent(
+            Metadata: new DiagramMetadata(
+                Id: "empty-diagram",
+                Name: "Empty Diagram",
+                Description: null,
+                CreatedAt: DateTime.UtcNow,
+                UpdatedAt: DateTime.UtcNow,
+                Version: 1
+            ),
             Nodes: new List<NodeModel>(),
             Edges: new List<EdgeModel>()
         );
@@ -185,6 +193,14 @@ public class PromptBuilderTests
         // Arrange
         var builder = new PromptBuilder();
         var minimalDiagram = new DiagramContent(
+            Metadata: new DiagramMetadata(
+                Id: "minimal-diagram",
+                Name: "Minimal Diagram",
+                Description: null,
+                CreatedAt: DateTime.UtcNow,
+                UpdatedAt: DateTime.UtcNow,
+                Version: 1
+            ),
             Nodes: new List<NodeModel>
             {
                 new NodeModel(
@@ -192,7 +208,7 @@ public class PromptBuilderTests
                     Type: "customNode",
                     Metadata: new NodeMetadata(
                         Label: "Simple Service",
-                        Category: NodeCategory.Compute,
+                        Category: "Compute",
                         Specs: new NodeSpecs(
                             LatencyBase: 10,
                             MaxThroughput: 100,

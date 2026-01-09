@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using SystemDesign.Application.Features.AI;
 using SystemDesign.Application.Services;
+using SystemDesign.Domain;
 
 namespace SystemDesign.Application;
 
@@ -16,6 +17,9 @@ public static class DependencyInjection
 
         // Đăng ký Comparison Service
         services.AddScoped<IComparisonService, ComparisonService>();
+
+        // Đăng ký Metrics Calculator Service
+        services.AddScoped<IMetricsCalculatorService, MetricsCalculatorService>();
 
         // Đăng ký AI Services
         services.AddScoped<PromptBuilder>();

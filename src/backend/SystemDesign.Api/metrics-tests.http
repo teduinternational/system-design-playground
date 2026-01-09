@@ -1,0 +1,332 @@
+### Metrics API Tests
+@baseUrl = https://localhost:7001
+
+### 1. Calculate Metrics - Simple Scenario
+POST {{baseUrl}}/api/metrics/calculate
+Content-Type: application/json
+
+{
+  "metadata": {
+    "name": "Simple E-commerce System",
+    "description": "Basic online store",
+    "tags": ["e-commerce", "web"],
+    "version": "1.0"
+  },
+  "nodes": [
+    {
+      "id": "node-1",
+      "type": "api-gateway",
+      "metadata": {
+        "label": "API Gateway",
+        "category": "EntryPoint",
+        "specs": {
+          "latencyBase": 10.0,
+          "maxThroughput": 10000,
+          "reliability": 0.999
+        },
+        "props": {
+          "instanceCount": 2,
+          "isClustered": true,
+          "region": "us-east-1"
+        },
+        "simulation": {
+          "processingTimeMs": 10.0,
+          "failureRate": 0.001
+        }
+      },
+      "position": { "x": 100, "y": 100 }
+    },
+    {
+      "id": "node-2",
+      "type": "web-server",
+      "metadata": {
+        "label": "Web Server",
+        "category": "Compute",
+        "specs": {
+          "latencyBase": 50.0,
+          "maxThroughput": 5000,
+          "reliability": 0.99
+        },
+        "props": {
+          "instanceCount": 3,
+          "isClustered": true,
+          "region": "us-east-1"
+        },
+        "simulation": {
+          "processingTimeMs": 50.0,
+          "failureRate": 0.01
+        }
+      },
+      "position": { "x": 300, "y": 100 }
+    },
+    {
+      "id": "node-3",
+      "type": "database",
+      "metadata": {
+        "label": "PostgreSQL DB",
+        "category": "Storage",
+        "specs": {
+          "latencyBase": 20.0,
+          "maxThroughput": 2000,
+          "reliability": 0.999
+        },
+        "props": {
+          "instanceCount": 2,
+          "isClustered": true,
+          "backupPolicy": "Daily",
+          "region": "us-east-1"
+        },
+        "simulation": {
+          "processingTimeMs": 20.0,
+          "failureRate": 0.005
+        }
+      },
+      "position": { "x": 500, "y": 100 }
+    },
+    {
+      "id": "node-4",
+      "type": "redis-cache",
+      "metadata": {
+        "label": "Redis Cache",
+        "category": "Middleware",
+        "specs": {
+          "latencyBase": 5.0,
+          "maxThroughput": 50000,
+          "reliability": 0.995
+        },
+        "props": {
+          "instanceCount": 2,
+          "isClustered": true,
+          "region": "us-east-1"
+        },
+        "simulation": {
+          "processingTimeMs": 5.0,
+          "failureRate": 0.002
+        }
+      },
+      "position": { "x": 500, "y": 300 }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "source": "node-1",
+      "target": "node-2",
+      "type": "default",
+      "metadata": {
+        "label": "HTTP",
+        "protocol": "REST",
+        "bandwidth": 1000
+      }
+    },
+    {
+      "id": "edge-2",
+      "source": "node-2",
+      "target": "node-3",
+      "type": "default",
+      "metadata": {
+        "label": "SQL Query",
+        "protocol": "TCP",
+        "bandwidth": 500
+      }
+    },
+    {
+      "id": "edge-3",
+      "source": "node-2",
+      "target": "node-4",
+      "type": "default",
+      "metadata": {
+        "label": "Cache Lookup",
+        "protocol": "Redis Protocol",
+        "bandwidth": 2000
+      }
+    }
+  ]
+}
+
+### 2. What-if Analysis - Increase Web Server Instances
+POST {{baseUrl}}/api/metrics/what-if
+Content-Type: application/json
+
+{
+  "diagramContent": {
+    "metadata": {
+      "name": "Simple E-commerce System",
+      "description": "Basic online store",
+      "tags": ["e-commerce", "web"],
+      "version": "1.0"
+    },
+    "nodes": [
+      {
+        "id": "node-1",
+        "type": "api-gateway",
+        "metadata": {
+          "label": "API Gateway",
+          "category": "EntryPoint",
+          "specs": {
+            "latencyBase": 10.0,
+            "maxThroughput": 10000,
+            "reliability": 0.999
+          },
+          "props": {
+            "instanceCount": 2,
+            "isClustered": true,
+            "region": "us-east-1"
+          },
+          "simulation": {
+            "processingTimeMs": 10.0,
+            "failureRate": 0.001
+          }
+        },
+        "position": { "x": 100, "y": 100 }
+      },
+      {
+        "id": "node-2",
+        "type": "web-server",
+        "metadata": {
+          "label": "Web Server",
+          "category": "Compute",
+          "specs": {
+            "latencyBase": 50.0,
+            "maxThroughput": 5000,
+            "reliability": 0.99
+          },
+          "props": {
+            "instanceCount": 3,
+            "isClustered": true,
+            "region": "us-east-1"
+          },
+          "simulation": {
+            "processingTimeMs": 50.0,
+            "failureRate": 0.01
+          }
+        },
+        "position": { "x": 300, "y": 100 }
+      },
+      {
+        "id": "node-3",
+        "type": "database",
+        "metadata": {
+          "label": "PostgreSQL DB",
+          "category": "Storage",
+          "specs": {
+            "latencyBase": 20.0,
+            "maxThroughput": 2000,
+            "reliability": 0.999
+          },
+          "props": {
+            "instanceCount": 2,
+            "isClustered": true,
+            "backupPolicy": "Daily",
+            "region": "us-east-1"
+          },
+          "simulation": {
+            "processingTimeMs": 20.0,
+            "failureRate": 0.005
+          }
+        },
+        "position": { "x": 500, "y": 100 }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-1",
+        "source": "node-1",
+        "target": "node-2",
+        "type": "default",
+        "metadata": {
+          "label": "HTTP",
+          "protocol": "REST",
+          "bandwidth": 1000
+        }
+      },
+      {
+        "id": "edge-2",
+        "source": "node-2",
+        "target": "node-3",
+        "type": "default",
+        "metadata": {
+          "label": "SQL Query",
+          "protocol": "TCP",
+          "bandwidth": 500
+        }
+      }
+    ]
+  },
+  "nodeId": "node-2",
+  "newInstanceCount": 5
+}
+
+### 3. Calculate Metrics - High Error Rate Scenario (Should show low health score)
+POST {{baseUrl}}/api/metrics/calculate
+Content-Type: application/json
+
+{
+  "metadata": {
+    "name": "Unstable System",
+    "description": "System with high failure rates",
+    "tags": ["test"],
+    "version": "1.0"
+  },
+  "nodes": [
+    {
+      "id": "node-1",
+      "type": "api-gateway",
+      "metadata": {
+        "label": "Unreliable Gateway",
+        "category": "EntryPoint",
+        "specs": {
+          "latencyBase": 10.0,
+          "maxThroughput": 1000,
+          "reliability": 0.90
+        },
+        "props": {
+          "instanceCount": 1,
+          "isClustered": false,
+          "region": "us-east-1"
+        },
+        "simulation": {
+          "processingTimeMs": 10.0,
+          "failureRate": 0.10
+        }
+      },
+      "position": { "x": 100, "y": 100 }
+    },
+    {
+      "id": "node-2",
+      "type": "database",
+      "metadata": {
+        "label": "Single DB (No Backup)",
+        "category": "Storage",
+        "specs": {
+          "latencyBase": 20.0,
+          "maxThroughput": 500,
+          "reliability": 0.95
+        },
+        "props": {
+          "instanceCount": 1,
+          "isClustered": false,
+          "region": "us-east-1"
+        },
+        "simulation": {
+          "processingTimeMs": 20.0,
+          "failureRate": 0.08
+        }
+      },
+      "position": { "x": 300, "y": 100 }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "source": "node-1",
+      "target": "node-2",
+      "type": "default",
+      "metadata": {
+        "label": "Query",
+        "protocol": "TCP",
+        "bandwidth": 100
+      }
+    }
+  ]
+}

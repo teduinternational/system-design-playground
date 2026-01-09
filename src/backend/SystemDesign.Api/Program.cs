@@ -55,5 +55,6 @@ app.MapRunEndpoints();
 app.MapSimulationEndpoints();
 app.MapComparisonEndpoints();
 app.MapAIEndpoints();
+app.MapMetricsEndpoints();
 
 app.Run();

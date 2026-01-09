@@ -4,6 +4,7 @@ import { Sidebar } from '../components/Sidebar';
 import { PropertiesPanel } from '../components/PropertiesPanel';
 import { Canvas } from '../components/Canvas';
 import { MetricsPanel } from '../components/MetricsPanel';
+import { MetricsDashboardPanel } from '../components/MetricsDashboardPanel';
 import { VersionHistory } from '../components/VersionHistory';
 import { SaveDiagramModal } from '../components/SaveDiagramModal';
 import { SaveVersionModal } from '../components/SaveVersionModal';
@@ -14,10 +15,12 @@ import { useDiagramStore } from '../stores/useDiagramStore';
 import { useDiagramPersistence } from '../hooks/useDiagramPersistence';
 import { useApiDiagramPersistence } from '../hooks/useApiDiagramPersistence';
 import { useSimulation } from '../hooks/useSimulation';
+import { useMetrics } from '../hooks/useMetrics';
 import { scenarioApi } from '../services/api';
 import { exportCanvasToPng } from '../utils/exportCanvas';
 import type { SimulationRequest } from '../services/types/simulation.types';
 import type { NodeModel, EdgeModel } from '../services/types/diagram.types';
+import type { SystemMetrics } from '../services/types/metrics.types';
 import sampleDiagram from '../mock-data/sample-diagram.json';
 
 interface EditorPageProps {
@@ -66,6 +69,17 @@ export const EditorPage: React.FC<EditorPageProps> = ({
     updateDiagramOnApi,
     isLoading 
   } = useApiDiagramPersistence();
+
+  // Metrics hook for KPI Dashboard
+  const { metrics, loading: metricsLoading } = useMetrics();
+  const [currentMetrics, setCurrentMetrics] = useState<SystemMetrics | null>(null);
+
+  // Update current metrics when auto-calculation completes
+  useEffect(() => {
+    if (metrics) {
+      setCurrentMetrics(metrics);
+    }
+  }, [metrics]);
 
   // Simulation hook
   const { runSimulation, simulationResult, percentileResult } = useSimulation({
@@ -333,6 +347,12 @@ export const EditorPage: React.FC<EditorPageProps> = ({
       <div className="flex flex-1 overflow-hidden relative">
         <Sidebar />
         <div className="flex-1 flex flex-col min-w-0">
+          {/* KPI Dashboard at top */}
+          <MetricsDashboardPanel 
+            metrics={currentMetrics}
+            loading={metricsLoading}
+          />
+          
           <Canvas 
             nodes={nodes as any}
             edges={edges as any}
@@ -344,7 +364,10 @@ export const EditorPage: React.FC<EditorPageProps> = ({
           />
           <MetricsPanel percentileResult={percentileResult} />
         </div>
-        <PropertiesPanel /> 
+        <PropertiesPanel 
+          currentMetrics={currentMetrics}
+          onMetricsUpdate={setCurrentMetrics}
+        /> 
       </div>
 
       {/* Floating AI Analysis Button */}

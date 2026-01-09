@@ -1,13 +1,26 @@
-import React from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   Server, 
   Zap,
   Settings,
-  Activity
+  Activity,
+  TrendingUp
 } from 'lucide-react';
 import { useDiagramStore, useNode } from '../stores/useDiagramStore';
+import { calculateWhatIf } from '../services/metrics.service';
+import { ImpactPanel } from './ImpactPanel';
+import type { SystemMetrics, MetricsDiff, DiagramContent } from '../services/types/metrics.types';
+import { debounce } from '../utils/debounce';
 
-const PropertiesPanelComponent: React.FC = () => {
+interface PropertiesPanelProps {
+  currentMetrics?: SystemMetrics | null;
+  onMetricsUpdate?: (metrics: SystemMetrics) => void;
+}
+
+const PropertiesPanelComponent: React.FC<PropertiesPanelProps> = ({
+  currentMetrics,
+  onMetricsUpdate
+}) => {
   // Subscribe only to selectedNodeId - this will only change when selection changes
   const selectedNodeId = useDiagramStore((state) => state.selectedNodeId);
   
@@ -18,6 +31,113 @@ const PropertiesPanelComponent: React.FC = () => {
   console.log('[PropertiesPanel] Render:', { selectedNodeId, hasNode: !!selectedNode });
   
   const updateNodeData = useDiagramStore((state) => state.updateNodeData);
+  const nodes = useDiagramStore((state) => state.nodes);
+  const edges = useDiagramStore((state) => state.edges);
+
+  // What-if analysis state
+  const [whatIfMetrics, setWhatIfMetrics] = useState<SystemMetrics | null>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [showImpact, setShowImpact] = useState(false);
+  const [metricsDiff, setMetricsDiff] = useState<MetricsDiff | null>(null);
+
+  // Reset what-if state when node selection changes
+  useEffect(() => {
+    setWhatIfMetrics(null);
+    setShowImpact(false);
+    setMetricsDiff(null);
+  }, [selectedNodeId]);
+
+  // Convert store nodes to API format
+  const convertToDiagramContent = useCallback((): DiagramContent | null => {
+    if (!nodes.length) return null;
+
+    return {
+      metadata: {
+        id: '',
+        name: 'Current Diagram',
+        description: 'Live diagram state',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        version: 1,
+      },
+      nodes: nodes.map(node => ({
+        id: node.id,
+        type: node.type || 'customNode',
+        metadata: {
+          label: node.data.label || node.id,
+          category: node.data.category || 'Compute',
+          specs: node.data.specs || { latencyBase: 10, maxThroughput: 1000, reliability: 0.99 },
+          technologies: node.data.technologies || [],
+          provider: node.data.provider,
+          props: node.data.props,
+          simulation: node.data.simulation || { processingTimeMs: 10, failureRate: 0.001 },
+          iconName: node.data.iconName,
+          status: node.data.status,
+        },
+        position: node.position,
+      })),
+      edges: edges.map(edge => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        type: edge.type,
+        data: {
+          protocol: 'HTTP',
+          networkLatency: 5,
+        },
+      })),
+    };
+  }, [nodes, edges]);
+
+  // Debounced what-if calculation
+  const debouncedWhatIf = useCallback(
+    debounce(async (nodeId: string, newInstanceCount: number) => {
+      if (!currentMetrics) return;
+
+      setIsCalculating(true);
+      try {
+        const diagramContent = convertToDiagramContent();
+        if (!diagramContent) return;
+
+        const newMetrics = await calculateWhatIf({
+          diagramContent,
+          nodeId,
+          newInstanceCount,
+        });
+
+        setWhatIfMetrics(newMetrics);
+
+        // Calculate diff
+        const diff: MetricsDiff = {
+          costDelta: newMetrics.monthlyCost - currentMetrics.monthlyCost,
+          errorRateDelta: newMetrics.overallErrorRate - currentMetrics.overallErrorRate,
+          healthScoreDelta: newMetrics.healthScore - currentMetrics.healthScore,
+          availabilityDelta: newMetrics.availabilityPercentage - currentMetrics.availabilityPercentage,
+        };
+
+        setMetricsDiff(diff);
+        setShowImpact(true);
+      } catch (error) {
+        console.error('What-if calculation failed:', error);
+      } finally {
+        setIsCalculating(false);
+      }
+    }, 500),
+    [currentMetrics, convertToDiagramContent]
+  );
+
+  // Handle instance count change with what-if preview
+  const handleInstanceCountChange = (newValue: number) => {
+    if (!selectedNode) return;
+
+    // Update UI immediately
+    handlePropsChange('instanceCount', newValue);
+
+    // Trigger what-if calculation if metrics available
+    if (currentMetrics) {
+      debouncedWhatIf(selectedNode.id, newValue);
+    }
+  };
 
   // Update handlers cho từng nhóm properties
   const handleSpecsChange = (field: string, value: number) => {
@@ -90,7 +210,8 @@ const PropertiesPanelComponent: React.FC = () => {
   const props = selectedNode.data.props || {};
 
   return (
-    <aside className="w-80 bg-surface border-l border-border flex flex-col shrink-0 z-10 h-full overflow-hidden">
+    <>
+      <aside className="w-80 bg-surface border-l border-border flex flex-col shrink-0 z-10 h-full overflow-hidden">
       {/* Header */}
       <div className="h-14 flex items-center justify-between px-4 border-b border-border shrink-0">
         <h2 className="font-medium text-sm">Properties</h2>
@@ -207,13 +328,60 @@ const PropertiesPanelComponent: React.FC = () => {
           </h4>
           
           <div className="space-y-2">
-            <label className="text-xs font-medium text-gray-400">Instance Count</label>
-            <input 
-              className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono" 
-              type="number" 
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-gray-400">Instance Count</label>
+              {currentMetrics && (
+                <button
+                  onClick={() => setShowImpact(!showImpact)}
+                  className="text-xs text-blue-500 hover:text-blue-400 flex items-center gap-1"
+                  title="What-if Analysis"
+                >
+                  <TrendingUp className="w-3 h-3" />
+                  What-if
+                </button>
+              )}
+            </div>
+            
+            {/* Slider for better UX */}
+            <input
+              type="range"
+              min="1"
+              max="10"
               value={props.instanceCount || 1}
-              onChange={(e) => handlePropsChange('instanceCount', parseInt(e.target.value) || 1)}
+              onChange={(e) => handleInstanceCountChange(parseInt(e.target.value))}
+              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-primary"
             />
+            
+            {/* Value display */}
+            <div className="flex items-center justify-between">
+              <input 
+                className="w-20 bg-background border border-border rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono text-center" 
+                type="number" 
+                value={props.instanceCount || 1}
+                onChange={(e) => handleInstanceCountChange(parseInt(e.target.value) || 1)}
+              />
+              {isCalculating && (
+                <span className="text-xs text-blue-500 animate-pulse">Calculating...</span>
+              )}
+            </div>
+
+            {/* What-if preview inline */}
+            {whatIfMetrics && metricsDiff && (
+              <div className="mt-2 p-2 bg-blue-500/10 border border-blue-500/30 rounded text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Cost Impact:</span>
+                  <span className={metricsDiff.costDelta >= 0 ? 'text-orange-400' : 'text-green-400'}>
+                    {metricsDiff.costDelta >= 0 ? '+' : ''}${metricsDiff.costDelta.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Health Score:</span>
+                  <span className={metricsDiff.healthScoreDelta >= 0 ? 'text-green-400' : 'text-red-400'}>
+                    {metricsDiff.healthScoreDelta >= 0 ? '+' : ''}{metricsDiff.healthScoreDelta}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -347,14 +515,39 @@ const PropertiesPanelComponent: React.FC = () => {
 
       {/* Footer Buttons */}
       <div className="p-4 border-t border-border flex gap-2 shrink-0 bg-surface">
-        <button className="flex-1 py-2 px-4 rounded-md bg-surface-hover hover:bg-[#252836] text-white text-xs font-medium border border-border transition-colors">
+        <button 
+          className="flex-1 py-2 px-4 rounded-md bg-surface-hover hover:bg-[#252836] text-white text-xs font-medium border border-border transition-colors"
+          onClick={() => {
+            setWhatIfMetrics(null);
+            setShowImpact(false);
+            setMetricsDiff(null);
+          }}
+        >
           Reset
         </button>
-        <button className="flex-1 py-2 px-4 rounded-md bg-primary hover:bg-primary-hover text-white text-xs font-medium shadow-[0_0_20px_-5px_rgba(43,75,238,0.3)] transition-colors">
-          Apply Config
-        </button>
+        {whatIfMetrics && onMetricsUpdate && (
+          <button 
+            className="flex-1 py-2 px-4 rounded-md bg-primary hover:bg-primary-hover text-white text-xs font-medium shadow-[0_0_20px_-5px_rgba(43,75,238,0.3)] transition-colors"
+            onClick={() => {
+              onMetricsUpdate?.(whatIfMetrics);
+              setShowImpact(false);
+            }}
+          >
+            Apply Changes
+          </button>
+        )}
       </div>
     </aside>
+
+    {/* Impact Panel */}
+    {metricsDiff && (
+      <ImpactPanel
+        diff={metricsDiff}
+        isVisible={showImpact}
+        onClose={() => setShowImpact(false)}
+      />
+    )}
+    </>
   );
 };
 
