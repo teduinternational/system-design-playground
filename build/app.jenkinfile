@@ -1,0 +1,68 @@
+pipeline {
+    agent any
+
+    environment {
+        REPO_URL = 'https://github.com/teduinternational/system-design-playground.git'
+        BRANCH = 'master'
+
+        // 👉 Thư mục React app (đổi nếu khác)
+        FRONTEND_DIR = 'src\\frontend\\system-design-playground'
+
+        BUILD_DIR = 'build'
+        TARGET_DIR = 'C:\\inetpub\\wwwroot\\playground.tedu.com.vn'
+    }
+
+    stages {
+
+        stage('Checkout Source') {
+            steps {
+                git branch: "${BRANCH}", url: "${REPO_URL}"
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                dir("${FRONTEND_DIR}") {
+                    bat 'npm ci'
+                }
+            }
+        }
+
+       stage('Build React App') {
+            steps {
+                dir("${FRONTEND_DIR}") {
+                    bat 'npm run build'
+                }
+            }
+        }
+
+        stage('Clean Target Folder') {
+            steps {
+                bat """
+                if exist "${TARGET_DIR}" (
+                    echo Deleting old files...
+                    rmdir /s /q "${TARGET_DIR}"
+                )
+                mkdir "${TARGET_DIR}"
+                """
+            }
+        }
+
+        stage('Deploy Build Files') {
+            steps {
+                bat """
+                xcopy "${FRONTEND_DIR}\\${BUILD_DIR}\\*" "${TARGET_DIR}\\" /E /Y /I
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '🎉 React App deployed successfully!'
+        }
+        failure {
+            echo '❌ Deployment failed!'
+        }
+    }
+}
