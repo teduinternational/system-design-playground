@@ -107,14 +107,19 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 // Cấu hình OpenAPI (Swagger) cho .NET 10
 builder.Services.AddOpenApi();
 
-// Cấu hình CORS cho development
+// Cấu hình CORS
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins(
+                "http://localhost:5173",
+                "http://localhost:3000",
+                "https://playground.tedu.com.vn"
+              )
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
@@ -142,6 +147,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
+app.UseCors(); // Enable CORS for all environments
+
 if (app.Environment.IsDevelopment())
 {
     // Sử dụng OpenAPI UI (Swagger UI trong .NET 10)
@@ -149,8 +156,6 @@ if (app.Environment.IsDevelopment())
     
     // Thêm Scalar UI (thay thế cho SwaggerUI, hiện đại hơn)
     app.MapScalarApiReference();
-    
-    app.UseCors();
 }
 
 app.UseHttpsRedirection();
