@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Play, Share2, Settings, Network, Square, Download, ChevronDown, Image, FileJson, Copy, Save, GitBranch, Zap } from 'lucide-react';
+import { Play, Share2, Settings, Network, Square, Download, ChevronDown, Image, FileJson, Copy, Save, GitBranch, Zap, LogOut, User } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface HeaderProps {
   isSimulating: boolean;
@@ -25,8 +26,10 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
   const currentPath = location.pathname;
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   
   const isEditor = currentPath === '/editor';
   const isSettings = currentPath === '/settings';
@@ -212,7 +215,59 @@ export const Header: React.FC<HeaderProps> = ({
           <Settings className="w-4 h-4" />
         </button>
         
-        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 border border-border"></div>
+        {/* User Menu */}
+        <div className="relative">
+          <button 
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="h-8 w-8 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 border border-border hover:opacity-80 transition-opacity flex items-center justify-center"
+            title={user?.email || 'User'}
+          >
+            <User className="w-4 h-4 text-white" />
+          </button>
+          
+          {showUserMenu && (
+            <>
+              <div 
+                className="fixed inset-0 z-40" 
+                onClick={() => setShowUserMenu(false)}
+              />
+              <div className="absolute right-0 top-full mt-2 w-64 bg-surface rounded-lg border border-border shadow-xl z-50 overflow-hidden">
+                {/* User Info */}
+                <div className="px-4 py-3 border-b border-border">
+                  <div className="font-medium text-white text-sm">
+                    {user?.fullName || user?.email}
+                  </div>
+                  <div className="text-xs text-secondary mt-0.5">{user?.email}</div>
+                  {user?.roles && user.roles.length > 0 && (
+                    <div className="flex gap-1 mt-2">
+                      {user.roles.map((role) => (
+                        <span 
+                          key={role}
+                          className="text-xs px-2 py-0.5 rounded bg-primary/20 text-primary border border-primary/30"
+                        >
+                          {role}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Logout Button */}
+                <button
+                  onClick={() => {
+                    logout();
+                    setShowUserMenu(false);
+                    navigate('/login');
+                  }}
+                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-surface-hover transition-colors flex items-center gap-3 text-red-400"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Đăng xuất</span>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </header>
   );

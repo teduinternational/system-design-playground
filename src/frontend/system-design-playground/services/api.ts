@@ -6,7 +6,14 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7074';
 
 /**
- * Generic fetch wrapper với error handling
+ * Get JWT token from localStorage
+ */
+const getAuthToken = (): string | null => {
+  return localStorage.getItem('auth_token');
+};
+
+/**
+ * Generic fetch wrapper với error handling và JWT authentication
  * Sử dụng bởi tất cả service layers
  */
 export async function fetchAPI<T>(
@@ -18,6 +25,12 @@ export async function fetchAPI<T>(
   const defaultHeaders: HeadersInit = {
     'Content-Type': 'application/json',
   };
+
+  // Automatically attach JWT token if available
+  const token = getAuthToken();
+  if (token) {
+    defaultHeaders['Authorization'] = `Bearer ${token}`;
+  }
 
   const config: RequestInit = {
     ...options,
@@ -72,3 +85,4 @@ export { scenarioApi } from './scenario.service';
 export { simulationApi } from './simulation.service';
 export { runApi } from './run.service';
 export { comparisonApi } from './comparison.api';
+export { authService } from './auth.service';

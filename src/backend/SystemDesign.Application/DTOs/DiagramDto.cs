@@ -25,4 +25,6 @@ public sealed record DiagramDto
     public string? CreatedBy { get; init; }
     public required DateTime CreatedAt { get; init; }
     public DateTime? UpdatedAt { get; init; }
+
+    public string OwnerId { set; get; }
 }

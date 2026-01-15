@@ -23,7 +23,7 @@ public sealed class GetDiagramsByUserHandler(IRepository<Diagram> repository)
         try
         {
             var diagrams = await repository.FindAsync(
-                d => !d.IsDeleted && d.CreatedBy == request.UserId,
+                d => !d.IsDeleted && d.OwnerId == request.UserId,
                 cancellationToken
             );
             

@@ -1,0 +1,48 @@
+### JWT Authentication Tests
+
+@baseUrl = https://localhost:7146
+@token = 
+
+### 1. Login - Generate JWT Token
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "demo123"
+}
+
+### 2. Get Current User Info (Protected - Requires Token)
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{token}}
+
+### 3. Validate Token
+POST {{baseUrl}}/api/auth/validate
+Content-Type: application/json
+
+{
+  "token": "{{token}}"
+}
+
+### 4. Test Unauthorized Access (No Token)
+GET {{baseUrl}}/api/auth/me
+
+### 5. Test with Invalid Token
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer invalid_token_here
+
+### 6. Test Expired Token
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+### Example: Using generated token
+# 1. Run the Login request first
+# 2. Copy the token from response
+# 3. Replace {{token}} variable above
+# 4. Test protected endpoints
+
+### Notes:
+# - Default password for demo: "demo123"
+# - Token expires in 24 hours (1440 minutes) in Development
+# - Token expires in 60 minutes (default) in Production
+# - Token contains: userId, email, roles (User, Admin)

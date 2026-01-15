@@ -19,7 +19,8 @@ public static class DiagramMappings
             Version = diagram.Version,
             CreatedBy = diagram.CreatedBy,
             CreatedAt = diagram.CreatedAt,
-            UpdatedAt = diagram.UpdatedAt
+            UpdatedAt = diagram.UpdatedAt,
+            OwnerId = diagram.OwnerId
         };
     }
 

@@ -3,7 +3,7 @@ namespace SystemDesign.Domain.Entities;
 /// <summary>
 /// Entity đại diện cho một diagram (project) trong hệ thống
 /// </summary>
-public sealed class Diagram : BaseEntity
+public sealed class Diagram : BaseEntity, IOwnable
 {
     public required string Name { get; set; }
     public string? Description { get; set; }
@@ -28,4 +28,6 @@ public sealed class Diagram : BaseEntity
     /// Quan hệ: 1 Diagram có nhiều Scenarios (versions)
     /// </summary>
     public ICollection<Scenario> Scenarios { get; set; } = new List<Scenario>();
+
+    public string OwnerId { get; set; }
 }

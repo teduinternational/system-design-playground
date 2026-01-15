@@ -1,0 +1,61 @@
+### Resource-based Authorization Tests
+
+@baseUrl = https://localhost:7146
+@token = 
+
+### 1. Login để lấy token
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "owner@example.com",
+  "password": "demo123"
+}
+
+### 2. Get Resource (Owner Only) - Success
+GET {{baseUrl}}/api/resources/diagram-123
+Authorization: Bearer {{token}}
+
+### 3. Delete Resource (Owner Only) - Success
+DELETE {{baseUrl}}/api/resources/diagram-123
+Authorization: Bearer {{token}}
+
+### 4. Get Admin Only Data (Admin Policy)
+GET {{baseUrl}}/api/resources/admin-only
+Authorization: Bearer {{token}}
+
+### 5. Get Public Data (Any authenticated user)
+GET {{baseUrl}}/api/resources/public
+Authorization: Bearer {{token}}
+
+### 6. Get Resource without token - 401 Unauthorized
+GET {{baseUrl}}/api/resources/diagram-123
+
+### 7. Get Resource với token của user khác - 403 Forbidden
+# Để test: generate token cho user khác, sau đó thử access resource của owner khác
+GET {{baseUrl}}/api/resources/diagram-123
+Authorization: Bearer {{token}}
+
+### Notes:
+# - Token contains userId in "sub" claim
+# - Resource OwnerId = current user's "sub" claim (auto match for demo)
+# - 401 Unauthorized: No token or invalid token
+# - 403 Forbidden: Valid token but not the owner
+# - Policy "OwnerOnly" checks if user.sub == resource.OwnerId
+# - Policy "AdminOnly" checks if user has "Admin" role
+# - Policy "AuthenticatedUser" checks if user is authenticated
+
+### Example Response Success (200):
+# {
+#   "id": "diagram-123",
+#   "name": "My Architecture Diagram",
+#   "ownerId": "user-guid",
+#   "createdAt": "2026-01-08T10:00:00Z"
+# }
+
+### Example Response Forbidden (403):
+# {
+#   "title": "Forbidden",
+#   "detail": "You do not have permission to delete this resource.",
+#   "status": 403
+# }
