@@ -8,6 +8,7 @@ using SystemDesign.Application;
 using SystemDesign.Infrastructure;
 using SystemDesign.Infrastructure.Persistence;
 using Scalar.AspNetCore;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -127,8 +128,8 @@ using (var scope = app.Services.CreateScope())
     try
     {
         // Run database migrations (optional, for production)
-        // var dbContext = services.GetRequiredService<ApplicationDbContext>();
-        // await dbContext.Database.MigrateAsync();
+        var dbContext = services.GetRequiredService<ApplicationDbContext>();
+        await dbContext.Database.MigrateAsync();
         
         // Seed admin user and roles
         await AdminSeeder.InitializeAsync(services);
