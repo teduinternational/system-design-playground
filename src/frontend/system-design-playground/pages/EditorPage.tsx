@@ -18,6 +18,7 @@ import { useSimulation } from '../hooks/useSimulation';
 import { useMetrics } from '../hooks/useMetrics';
 import { scenarioApi } from '../services/api';
 import { exportCanvasToPng } from '../utils/exportCanvas';
+import { exportToK6, downloadK6Script } from '../utils/exportK6';
 import type { SimulationRequest } from '../services/types/simulation.types';
 import type { NodeModel, EdgeModel } from '../services/types/diagram.types';
 import type { SystemMetrics } from '../services/types/metrics.types';
@@ -29,6 +30,7 @@ interface EditorPageProps {
   setExportHandlers: (handlers: {
     onExportPng?: () => void;
     onExportJson?: () => void;
+    onExportK6?: () => void;
     onSave?: () => void;
     onSaveVersion?: () => void;
     onShowVersionHistory?: () => void;
@@ -150,6 +152,54 @@ export const EditorPage: React.FC<EditorPageProps> = ({
     if (success) {
       console.log('🎉 JSON exported successfully!');
       toast.success('Diagram exported as JSON!');
+    }
+  };
+
+  // Export k6 load test script
+  const handleExportK6 = () => {
+    try {
+      // Get fresh data from store
+      const currentNodes = useDiagramStore.getState().nodes;
+      const currentEdges = useDiagramStore.getState().edges;
+      
+      console.log('📊 Export k6 - Store nodes:', currentNodes.length, currentNodes);
+      console.log('📊 Export k6 - Store edges:', currentEdges.length, currentEdges);
+      
+      // Validation: Check if diagram is empty
+      if (currentNodes.length === 0) {
+        toast.error('Diagram is empty! Please add nodes or load a diagram first.');
+        console.error('❌ Cannot export k6: No nodes in diagram');
+        return;
+      }
+      
+      // Check for Entry Point or Traffic Manager nodes
+      const entryNodes = currentNodes.filter(node => 
+        node.data?.category === 'Entry Point' || 
+        node.data?.category === 'Traffic Manager'
+      );
+      
+      console.log('📊 Found entry point nodes:', entryNodes.length, entryNodes);
+      
+      if (entryNodes.length === 0) {
+        toast.warning('No Entry Point or API Gateway found! Add at least one to generate k6 test.');
+        console.warn('⚠️ No Entry Point nodes found in diagram');
+        return;
+      }
+      
+      // Export k6 script
+      const k6Script = exportToK6({ 
+        nodes: currentNodes as any, 
+        edges: currentEdges as any 
+      });
+      
+      console.log('✅ k6 script generated, length:', k6Script.length);
+      
+      downloadK6Script(k6Script, 'load-test.js');
+      toast.success(`k6 script exported! Found ${entryNodes.length} endpoint(s).`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Export failed: ${message}`);
+      console.error('❌ Failed to export k6:', error);
     }
   };
 
@@ -310,11 +360,12 @@ export const EditorPage: React.FC<EditorPageProps> = ({
     setExportHandlers({
       onExportPng: handleExportPng,
       onExportJson: handleExportJson,
+      onExportK6: handleExportK6,
       onSave: handleSave,
       onSaveVersion: handleSaveVersion,
       onShowVersionHistory: handleShowVersionHistory,
     });
-  }, [setExportHandlers, diagramId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [setExportHandlers, diagramId, nodes.length, edges.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Expose simulation handler to parent
   useEffect(() => {

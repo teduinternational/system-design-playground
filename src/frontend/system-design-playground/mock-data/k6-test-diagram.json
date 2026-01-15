@@ -1,0 +1,152 @@
+{
+  "metadata": {
+    "id": "k6-test-diagram",
+    "name": "Load Test Sample",
+    "description": "Sample diagram for testing k6 export",
+    "createdAt": "2026-01-15T00:00:00.000Z",
+    "updatedAt": "2026-01-15T00:00:00.000Z",
+    "version": 1
+  },
+  "nodes": [
+    {
+      "id": "entry-1",
+      "type": "custom",
+      "position": { "x": 100, "y": 100 },
+      "data": {
+        "category": "Entry Point",
+        "label": "User Requests",
+        "technologies": ["HTTP", "REST"],
+        "specs": {
+          "latencyBase": 50,
+          "maxThroughput": 1000,
+          "reliability": 0.99
+        },
+        "simulation": {
+          "processingTimeMs": 50,
+          "failureRate": 0.01
+        },
+        "props": {
+          "httpMethod": "GET",
+          "endpoint": "https://api.myapp.com/users"
+        },
+        "iconName": "Globe",
+        "status": "healthy"
+      }
+    },
+    {
+      "id": "gateway-1",
+      "type": "custom",
+      "position": { "x": 350, "y": 100 },
+      "data": {
+        "category": "Traffic Manager",
+        "label": "API Gateway",
+        "technologies": ["Kong", "NGINX"],
+        "provider": "AWS",
+        "specs": {
+          "latencyBase": 10,
+          "maxThroughput": 5000,
+          "reliability": 0.999
+        },
+        "simulation": {
+          "processingTimeMs": 10,
+          "failureRate": 0.001
+        },
+        "props": {
+          "httpMethod": "POST",
+          "endpoint": "https://gateway.myapp.com/api/v1/process",
+          "requestBody": {
+            "action": "{{$randomInt}}",
+            "timestamp": "{{$timestamp}}"
+          },
+          "headers": {
+            "Authorization": "Bearer token",
+            "Content-Type": "application/json"
+          }
+        },
+        "iconName": "Network",
+        "status": "healthy"
+      }
+    },
+    {
+      "id": "compute-1",
+      "type": "custom",
+      "position": { "x": 600, "y": 100 },
+      "data": {
+        "category": "Compute",
+        "label": "Web Server",
+        "technologies": [".NET 10", "Minimal API"],
+        "specs": {
+          "latencyBase": 20,
+          "maxThroughput": 2000,
+          "reliability": 0.99
+        },
+        "simulation": {
+          "processingTimeMs": 20,
+          "failureRate": 0.005
+        },
+        "props": {
+          "instanceCount": 3,
+          "isClustered": true,
+          "region": "us-east-1"
+        },
+        "iconName": "Server",
+        "status": "healthy"
+      }
+    },
+    {
+      "id": "storage-1",
+      "type": "custom",
+      "position": { "x": 850, "y": 100 },
+      "data": {
+        "category": "Storage",
+        "label": "SQL Database",
+        "technologies": ["SQL Server"],
+        "provider": "Azure",
+        "specs": {
+          "latencyBase": 30,
+          "maxThroughput": 1500,
+          "reliability": 0.999
+        },
+        "simulation": {
+          "processingTimeMs": 30,
+          "failureRate": 0.001
+        },
+        "props": {
+          "backupPolicy": "daily",
+          "region": "us-east-1"
+        },
+        "iconName": "Database",
+        "status": "healthy"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "entry-1_gateway-1",
+      "source": "entry-1",
+      "target": "gateway-1",
+      "data": {
+        "protocol": "https",
+        "networkLatency": 5
+      }
+    },
+    {
+      "id": "gateway-1_compute-1",
+      "source": "gateway-1",
+      "target": "compute-1",
+      "data": {
+        "protocol": "https",
+        "networkLatency": 3
+      }
+    },
+    {
+      "id": "compute-1_storage-1",
+      "source": "compute-1",
+      "target": "storage-1",
+      "data": {
+        "protocol": "tcp",
+        "networkLatency": 2
+      }
+    }
+  ]
+}

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Play, Share2, Settings, Network, Square, Download, ChevronDown, Image, FileJson, Copy, Save, GitBranch } from 'lucide-react';
+import { Play, Share2, Settings, Network, Square, Download, ChevronDown, Image, FileJson, Copy, Save, GitBranch, Zap } from 'lucide-react';
 
 interface HeaderProps {
   isSimulating: boolean;
   onToggleSimulate: () => void;
   onExportPng?: () => void;
   onExportJson?: () => void;
+  onExportK6?: () => void;
   onSave?: () => void;
   onSaveVersion?: () => void;
   onShowVersionHistory?: () => void;
@@ -17,6 +18,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleSimulate,
   onExportPng,
   onExportJson,
+  onExportK6,
   onSave,
   onSaveVersion,
   onShowVersionHistory
@@ -180,6 +182,20 @@ export const Header: React.FC<HeaderProps> = ({
                       <div>
                         <div className="font-medium">Export as JSON</div>
                         <div className="text-xs text-secondary">Save diagram data</div>
+                      </div>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        onExportK6?.();
+                        setShowExportMenu(false);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-surface-hover transition-colors flex items-center gap-3 text-white"
+                    >
+                      <Zap className="w-4 h-4 text-yellow-400" />
+                      <div>
+                        <div className="font-medium">Export k6 Load Test</div>
+                        <div className="text-xs text-secondary">Generate k6 script from entry points</div>
                       </div>
                     </button>
                   </div>

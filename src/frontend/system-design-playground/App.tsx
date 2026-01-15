@@ -12,6 +12,7 @@ const App: React.FC = () => {
   const [exportHandlers, setExportHandlers] = useState<{
     onExportPng?: () => void;
     onExportJson?: () => void;
+    onExportK6?: () => void;
     onSave?: () => void;
     onSaveVersion?: () => void;
     onShowVersionHistory?: () => void;
@@ -25,6 +26,7 @@ const App: React.FC = () => {
           onToggleSimulate={() => setIsSimulating(prev => !prev)}
           onExportPng={exportHandlers.onExportPng}
           onExportJson={exportHandlers.onExportJson}
+          onExportK6={exportHandlers.onExportK6}
           onSave={exportHandlers.onSave}
           onSaveVersion={exportHandlers.onSaveVersion}
           onShowVersionHistory={exportHandlers.onShowVersionHistory}
