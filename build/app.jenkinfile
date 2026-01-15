@@ -8,7 +8,7 @@ pipeline {
         // 👉 Thư mục React app (đổi nếu khác)
         FRONTEND_DIR = 'src\\frontend\\system-design-playground'
 
-        BUILD_DIR = 'build'
+        BUILD_DIR = 'dist'
         TARGET_DIR = 'C:\\inetpub\\wwwroot\\playground.tedu.com.vn'
     }
 
@@ -40,10 +40,16 @@ pipeline {
             steps {
                 bat """
                 if exist "${TARGET_DIR}" (
-                    echo Deleting old files...
-                    rmdir /s /q "${TARGET_DIR}"
+                    for /d %%D in ("${TARGET_DIR}\\*") do (
+                        if /I not "%%~nxD"==".well-known" (
+                            rmdir /s /q "%%D"
+                        )
+                    )
+                    del /q "${TARGET_DIR}\\*" 2>nul
+                ) else (
+                    mkdir "${TARGET_DIR}"
                 )
-                mkdir "${TARGET_DIR}"
+                exit /b 0
                 """
             }
         }
